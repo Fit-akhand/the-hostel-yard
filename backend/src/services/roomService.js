@@ -1,6 +1,7 @@
 import Room from '../models/Room.js'
 import Property from '../models/Property.js'
 import PropertyManagerAssignment from '../models/PropertyManagerAssignment.js'
+import StaffAssignment from '../models/StaffAssignment.js'
 import { PERMISSIONS } from '../constants/permissions.js'
 
 const UPDATABLE_ROOM_FIELDS = [
@@ -66,11 +67,53 @@ const checkRoomPropertyAccess = async ({
     }
 
     if (permission) {
-      const requiredPermissions = Array.isArray(
-        permission
+      const requiredPermissions =
+        Array.isArray(permission)
+          ? permission
+          : [permission]
+
+      const hasPermission =
+        requiredPermissions.some((required) =>
+          assignment.permissions.includes(required)
+        )
+
+      if (!hasPermission) {
+        const error = new Error(
+          'You do not have permission to perform this action.'
+        )
+
+        error.statusCode = 403
+        throw error
+      }
+    }
+
+    return property
+  }
+
+  // Staff must have an active
+  // assignment to this property.
+  if (user.role === 'STAFF') {
+    const assignment =
+      await StaffAssignment.findOne({
+        staff: user._id,
+        property: propertyId,
+        status: 'ACTIVE',
+      })
+
+    if (!assignment) {
+      const error = new Error(
+        'You are not assigned to this property.'
       )
-        ? permission
-        : [permission]
+
+      error.statusCode = 403
+      throw error
+    }
+
+    if (permission) {
+      const requiredPermissions =
+        Array.isArray(permission)
+          ? permission
+          : [permission]
 
       const hasPermission =
         requiredPermissions.some((required) =>
@@ -180,9 +223,7 @@ export const getRooms = async ({
 
       filter.property = propertyId
     }
-  } else if (
-    user.role === 'PROPERTY_MANAGER'
-  ) {
+  } else if (user.role === 'PROPERTY_MANAGER') {
     const assignments =
       await PropertyManagerAssignment.find({
         manager: user._id,
@@ -212,6 +253,47 @@ export const getRooms = async ({
     } else {
       filter.property = {
         $in: propertyIds,
+      }
+    }
+  } else if (user.role === 'STAFF') {
+    const assignments =
+      await StaffAssignment.find({
+        staff: user._id,
+        status: 'ACTIVE',
+      }).select('property permissions')
+
+    const viewableProperties =
+      assignments
+        .filter((assignment) =>
+          assignment.permissions.includes(
+            PERMISSIONS.VIEW_ROOMS
+          )
+        )
+        .map(
+          (assignment) =>
+            assignment.property
+        )
+
+    if (!viewableProperties.length) {
+      const error = new Error(
+        'You are not authorized to view rooms.'
+      )
+
+      error.statusCode = 403
+      throw error
+    }
+
+    if (propertyId) {
+      await checkRoomPropertyAccess({
+        user,
+        propertyId,
+        permission: PERMISSIONS.VIEW_ROOMS,
+      })
+
+      filter.property = propertyId
+    } else {
+      filter.property = {
+        $in: viewableProperties,
       }
     }
   } else {

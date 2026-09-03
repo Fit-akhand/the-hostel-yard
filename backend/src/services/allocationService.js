@@ -5,6 +5,7 @@ import Tenant from '../models/Tenant.js'
 import Bed from '../models/Bed.js'
 import Room from '../models/Room.js'
 import Property from '../models/Property.js'
+import StaffAssignment from '../models/StaffAssignment.js'
 import PropertyManagerAssignment from '../models/PropertyManagerAssignment.js'
 
 import { PERMISSIONS } from '../constants/permissions.js'
@@ -76,28 +77,53 @@ const checkPropertyAccess = async ({
     return property
   }
 
+    if (user.role === 'STAFF') {
+    const assignment =
+      await StaffAssignment.findOne({
+        staff: user._id,
+        property: propertyId,
+        status: 'ACTIVE',
+      })
+
+    if (!assignment) {
+      throw getError(
+        'You are not assigned to this property.',
+        403
+      )
+    }
+
+    if (
+      permission &&
+      !assignment.permissions.includes(permission)
+    ) {
+      throw getError(
+        'You do not have permission to perform this action.',
+        403
+      )
+    }
+
+    return property
+  }
+
   throw getError(
     'You are not authorized to access this property.',
     403
   )
 }
 
-export const createAllocation = async ({
-  user,
-  allocationData,
+const createAllocationRecord = async ({
+  organizationId,
+  tenantId,
+  bedId,
+  startDate,
+  notes = null,
+  session = null,
 }) => {
-  const {
-    tenantId,
-    bedId,
-    startDate,
-    notes,
-  } = allocationData
-
   const tenant =
     await Tenant.findOne({
       _id: tenantId,
-      organization: user.organization,
-    })
+      organization: organizationId,
+    }).session(session)
 
   if (!tenant) {
     throw getError(
@@ -113,11 +139,10 @@ export const createAllocation = async ({
     )
   }
 
-  const bed =
-    await Bed.findOne({
-      _id: bedId,
-      organization: user.organization,
-    })
+  const bed = await Bed.findOne({
+    _id: bedId,
+    organization: organizationId,
+  }).session(session)
 
   if (!bed) {
     throw getError(
@@ -126,11 +151,10 @@ export const createAllocation = async ({
     )
   }
 
-  const room =
-    await Room.findOne({
-      _id: bed.room,
-      organization: user.organization,
-    })
+  const room = await Room.findOne({
+    _id: bed.room,
+    organization: organizationId,
+  }).session(session)
 
   if (!room) {
     throw getError(
@@ -146,12 +170,6 @@ export const createAllocation = async ({
     )
   }
 
-  await checkPropertyAccess({
-    user,
-    propertyId: bed.property,
-    permission: PERMISSIONS.ADD_ALLOCATIONS,
-  })
-
   if (bed.status !== 'AVAILABLE') {
     throw getError(
       `Bed is not available. Current status: ${bed.status}.`,
@@ -161,10 +179,10 @@ export const createAllocation = async ({
 
   const existingTenantAllocation =
     await Allocation.findOne({
-      organization: user.organization,
+      organization: organizationId,
       tenant: tenant._id,
       status: 'ACTIVE',
-    })
+    }).session(session)
 
   if (existingTenantAllocation) {
     throw getError(
@@ -175,10 +193,10 @@ export const createAllocation = async ({
 
   const existingBedAllocation =
     await Allocation.findOne({
-      organization: user.organization,
+      organization: organizationId,
       bed: bed._id,
       status: 'ACTIVE',
-    })
+    }).session(session)
 
   if (existingBedAllocation) {
     throw getError(
@@ -188,7 +206,9 @@ export const createAllocation = async ({
   }
 
   if (
-    new Date(startDate) < new Date(tenant.moveInDate)
+    tenant.moveInDate &&
+    new Date(startDate) <
+      new Date(tenant.moveInDate)
   ) {
     throw getError(
       'Allocation start date cannot be before the tenant move-in date.',
@@ -197,22 +217,68 @@ export const createAllocation = async ({
   }
 
   const allocation =
-    await Allocation.create({
-      organization: user.organization,
-      property: bed.property,
-      tenant: tenant._id,
-      room: room._id,
-      bed: bed._id,
-      startDate,
-      notes: notes || null,
-      status: 'ACTIVE',
-    })
+    await Allocation.create(
+      [
+        {
+          organization: organizationId,
+          property: bed.property,
+          tenant: tenant._id,
+          room: room._id,
+          bed: bed._id,
+          startDate,
+          notes,
+          status: 'ACTIVE',
+        },
+      ],
+      { session }
+    )
+
+  const createdAllocation = allocation[0]
 
   bed.status = 'OCCUPIED'
 
-  await bed.save()
+  await bed.save({ session })
 
-  return allocation
+  return createdAllocation
+}
+
+export const createAllocation = async ({
+  user,
+  allocationData,
+}) => {
+  const {
+    tenantId,
+    bedId,
+    startDate,
+    notes,
+  } = allocationData
+
+  const bed =
+    await Bed.findOne({
+      _id: bedId,
+      organization: user.organization,
+    })
+
+  if (!bed) {
+    throw getError(
+      'Bed not found.',
+      404
+    )
+  }
+
+  await checkPropertyAccess({
+    user,
+    propertyId: bed.property,
+    permission: PERMISSIONS.ADD_ALLOCATIONS,
+  })
+
+  return createAllocationRecord({
+    organizationId: user.organization,
+    tenantId,
+    bedId,
+    startDate,
+    notes: notes || null,
+  })
 }
 
 export const getAllocations = async ({
@@ -231,57 +297,98 @@ export const getAllocations = async ({
     status: 'ACTIVE',
   }
 
-  if (user.role === 'BUSINESS_OWNER') {
-    if (propertyId) {
-      await checkPropertyAccess({
-        user,
-        propertyId,
-      })
+if (user.role === 'BUSINESS_OWNER') {
+  if (propertyId) {
+    await checkPropertyAccess({
+      user,
+      propertyId,
+    })
 
-      filter.property = propertyId
-    }
+    filter.property = propertyId
   }
+}
 
-  else if (user.role === 'PROPERTY_MANAGER') {
-    const assignments =
-      await PropertyManagerAssignment.find({
-        manager: user._id,
-        status: 'ACTIVE',
-      }).select('property')
+else if (user.role === 'PROPERTY_MANAGER') {
+  const assignments =
+    await PropertyManagerAssignment.find({
+      manager: user._id,
+      status: 'ACTIVE',
+    }).select('property')
 
-    const propertyIds =
-      assignments.map(
-        (assignment) => assignment.property
+  const propertyIds =
+    assignments.map(
+      (assignment) => assignment.property
+    )
+
+  if (propertyId) {
+    const hasAccess =
+      propertyIds.some(
+        (id) =>
+          id.toString() === propertyId
       )
 
-    if (propertyId) {
-      const hasAccess =
-        propertyIds.some(
-          (id) =>
-            id.toString() === propertyId
-        )
+    if (!hasAccess) {
+      throw getError(
+        'You are not assigned to this property.',
+        403
+      )
+    }
 
-      if (!hasAccess) {
-        throw getError(
-          'You are not assigned to this property.',
-          403
-        )
-      }
-
-      filter.property = propertyId
-    } else {
-      filter.property = {
-        $in: propertyIds,
-      }
+    filter.property = propertyId
+  } else {
+    filter.property = {
+      $in: propertyIds,
     }
   }
+}
 
-  else {
+else if (user.role === 'STAFF') {
+  const assignments =
+    await StaffAssignment.find({
+      staff: user._id,
+      status: 'ACTIVE',
+    }).select('property permissions')
+
+  const viewableProperties =
+    assignments
+      .filter((assignment) =>
+        assignment.permissions.includes(
+          PERMISSIONS.VIEW_ALLOCATIONS
+        )
+      )
+      .map(
+        (assignment) =>
+          assignment.property
+      )
+
+  if (!viewableProperties.length) {
     throw getError(
       'You are not authorized to view allocations.',
       403
     )
   }
+
+  if (propertyId) {
+    await checkPropertyAccess({
+      user,
+      propertyId,
+      permission: PERMISSIONS.VIEW_ALLOCATIONS,
+    })
+
+    filter.property = propertyId
+  } else {
+    filter.property = {
+      $in: viewableProperties,
+    }
+  }
+}
+
+else {
+  throw getError(
+    'You are not authorized to view allocations.',
+    403
+  )
+}
 
   return Allocation.find(filter)
     .populate(
@@ -411,4 +518,18 @@ export const endAllocation = async ({
   await bed.save()
 
   return allocation
+}
+
+export const createAllocationFromBooking = async ({
+  booking,
+  session = null,
+}) => {
+  return createAllocationRecord({
+    organizationId: booking.organization,
+    tenantId: booking.tenant,
+    bedId: booking.bed,
+    startDate: booking.expectedMoveInDate,
+    notes: `Created automatically from booking ${booking._id}`,
+    session,
+  })
 }
