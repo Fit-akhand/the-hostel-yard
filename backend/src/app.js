@@ -15,6 +15,8 @@ import paymentSettingsRoutes from './routes/paymentSettingsRoutes.js'
 import expenseRoutes from './routes/expenseRoutes.js'
 import complaintRoutes from './routes/complaintRoutes.js'
 import announcementRoutes from './routes/announcementRoutes.js'
+import bookingRoutes from './routes/bookingRoutes.js'
+import staffRoutes from './routes/staffRoutes.js'
 
 import {
   errorHandler,
@@ -115,6 +117,8 @@ app.use(
   allocationRoutes
 )
 
+app.use('/api/bookings', bookingRoutes)
+
 // --------------------------------------------------
 // RENT
 // --------------------------------------------------
@@ -151,6 +155,11 @@ app.use(
 app.use(
   '/api/announcements',
   announcementRoutes
+)
+
+app.use(
+  '/api/staff',
+  staffRoutes
 )
 
 // --------------------------------------------------
