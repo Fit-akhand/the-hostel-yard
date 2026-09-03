@@ -104,6 +104,7 @@ export const PERMISSIONS = {
   VIEW_BOOKINGS: "VIEW_BOOKINGS",
 
   MANAGE_BOOKINGS: "MANAGE_BOOKINGS",
+  REMOVE_BOOKINGS: "REMOVE_BOOKINGS",
 
   // --------------------------------------------------
   // DOCUMENTS
