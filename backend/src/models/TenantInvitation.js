@@ -47,7 +47,6 @@ const tenantInvitationSchema =
       expiresAt: {
         type: Date,
         required: true,
-        index: true,
       },
 
       status: {
@@ -71,6 +70,11 @@ const tenantInvitationSchema =
       timestamps: true,
     }
   )
+
+  tenantInvitationSchema.index(
+  { expiresAt: 1 },
+  { expireAfterSeconds: 0 }
+)
 
 const TenantInvitation =
   mongoose.model(

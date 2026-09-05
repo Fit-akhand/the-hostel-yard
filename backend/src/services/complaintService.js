@@ -1119,9 +1119,11 @@ export const changeComplaintStatus = async ({
     )
   }
 
-  complaint.status = status
+ const previousStatus = complaint.status
 
-  if (status === 'RESOLVED') {
+complaint.status = status
+
+if (status === 'RESOLVED') {
   complaint.resolvedBy = user._id
   complaint.resolvedAt = new Date()
 
@@ -1130,7 +1132,10 @@ export const changeComplaintStatus = async ({
   }
 }
 
-if (status === 'IN_PROGRESS' && complaint.status === 'RESOLVED') {
+if (
+  status === 'IN_PROGRESS' &&
+  previousStatus === 'RESOLVED'
+) {
   complaint.resolvedBy = null
   complaint.resolvedAt = null
 }

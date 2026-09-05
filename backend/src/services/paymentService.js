@@ -5,6 +5,11 @@ import RentDue from '../models/RentDue.js'
 import Tenant from '../models/Tenant.js'
 import PaymentSettings from '../models/PaymentSettings.js'
 import Allocation from '../models/Allocation.js'
+import User from '../models/User.js'
+import {
+  createNotification,
+  createNotifications,
+} from './notificationService.js'
 
 
 import StaffAssignment from '../models/StaffAssignment.js'
@@ -17,11 +22,103 @@ const createError = (
   statusCode
 ) => {
   const error = new Error(message)
-
+  
   error.statusCode =
-    statusCode
-
+  statusCode
+  
   return error
+}
+
+// const notifyPropertyManagerPaymentReceived = async ({ payment }) => {
+//   const managerAssignment = await PropertyManagerAssignment.findOne({
+//     property: payment.property,
+//     status: 'ACTIVE',
+//   }).select('manager')
+
+//   if (!managerAssignment?.manager) {
+//     return null
+//   }
+
+//   const manager = await User.findOne({
+//     _id: managerAssignment.manager,
+//     organization: payment.organization,
+//     role: 'PROPERTY_MANAGER',
+//     status: 'ACTIVE',
+//   }).select('_id')
+
+//   if (!manager) {
+//     return null
+//   }
+
+//   return createNotification({
+//     recipient: manager._id,
+//     organization: payment.organization,
+//     property: payment.property,
+//     type: 'PAYMENT_RECEIVED',
+//     title: 'New Payment Received',
+//     message: `A rent payment of ₹${payment.amount} has been submitted for verification.`,
+//     data: {
+//       paymentId: payment._id,
+//       tenantId: payment.tenant,
+//       rentDueId: payment.rentDue,
+//       amount: payment.amount,
+//       method: payment.method,
+//       transactionReference: payment.transactionReference,
+//       status: payment.status,
+//     },
+//     createdBy: payment.recordedBy,
+//   })
+// }
+
+const notifyPropertyManagerPaymentReceived = async ({ payment }) => {
+  console.log('🔔 PAYMENT_RECEIVED: finding manager...')
+  console.log('Property:', payment.property)
+  console.log('Organization:', payment.organization)
+
+  const managerAssignments = await PropertyManagerAssignment.find({
+    property: payment.property,
+    status: 'ACTIVE',
+  }).select('manager')
+
+  const managerIds = managerAssignments
+    .map((assignment) => assignment.manager)
+    .filter(Boolean)
+
+  if (!managerIds.length) {
+    console.log('❌ No active managers found')
+    return []
+  }
+
+  const managers = await User.find({
+    _id: { $in: managerIds },
+    organization: payment.organization,
+    role: 'PROPERTY_MANAGER',
+    status: 'ACTIVE',
+  }).select('_id')
+
+  if (!managers.length) {
+    console.log('❌ No valid active managers found')
+    return []
+  }
+
+  return createNotifications({
+    recipients: managers.map((manager) => manager._id),
+    organization: payment.organization,
+    property: payment.property,
+    type: 'PAYMENT_RECEIVED',
+    title: 'New Payment Received',
+    message: `A rent payment of ₹${payment.amount} has been submitted for verification.`,
+    data: {
+      paymentId: payment._id,
+      tenantId: payment.tenant,
+      rentDueId: payment.rentDue,
+      amount: payment.amount,
+      method: payment.method,
+      transactionReference: payment.transactionReference,
+      status: payment.status,
+    },
+    createdBy: payment.recordedBy,
+  })
 }
 
 // --------------------------------------------------
@@ -272,6 +369,84 @@ export const createPayment = async ({
   return payment
 }
 
+const createPaymentReceivedNotifications = async ({
+  payment,
+}) => {
+  const managerAssignments =
+    await PropertyManagerAssignment.find({
+      property: payment.property,
+      status: 'ACTIVE',
+    }).select('manager')
+
+  const managerIds =
+    managerAssignments.map(
+      (assignment) => assignment.manager
+    )
+
+  const businessOwners =
+    await User.find({
+      organization: payment.organization,
+      role: 'BUSINESS_OWNER',
+      status: 'ACTIVE',
+    }).select('_id')
+
+  const recipients = [
+    ...managerIds,
+    ...businessOwners.map(
+      (owner) => owner._id
+    ),
+  ]
+
+  if (!recipients.length) {
+    return []
+  }
+
+  return createNotifications({
+    recipients,
+
+    organization:
+      payment.organization,
+
+    property:
+      payment.property,
+
+    type:
+      'PAYMENT_RECEIVED',
+
+    title:
+      'New Payment Received',
+
+    message:
+      `A rent payment of ₹${payment.amount} has been submitted.`,
+
+    data: {
+      paymentId:
+        payment._id,
+
+      tenantId:
+        payment.tenant,
+
+      rentDueId:
+        payment.rentDue,
+
+      amount:
+        payment.amount,
+
+      method:
+        payment.method,
+
+      transactionReference:
+        payment.transactionReference,
+
+      status:
+        payment.status,
+    },
+
+    createdBy:
+      payment.recordedBy,
+  })
+}
+
 // --------------------------------------------------
 // CREATE PAYMENT - TENANT
 // --------------------------------------------------
@@ -436,48 +611,59 @@ export const createTenantPayment = async ({
   // ------------------------------------------------
 
   const payment =
-    await Payment.create({
-      organization:
-        rentDue.organization,
+  await Payment.create({
+    organization:
+      rentDue.organization,
 
-      property:
-        rentDue.property,
+    property:
+      rentDue.property,
 
-      tenant:
-        tenant._id,
+    tenant:
+      tenant._id,
 
-      rentDue:
-        rentDue._id,
+    rentDue:
+      rentDue._id,
 
-      amount:
-        paymentData.amount,
+    amount:
+      paymentData.amount,
 
-      method:
-        'UPI',
+    method:
+      'UPI',
 
-      transactionReference:
-        paymentData.transactionReference,
+    transactionReference:
+      paymentData.transactionReference,
 
-      paymentDate:
-        paymentData.paymentDate,
+    paymentDate:
+      paymentData.paymentDate,
 
-      notes:
-        paymentData.notes || null,
+    notes:
+      paymentData.notes || null,
 
-      recordedBy:
-        user._id,
+    recordedBy:
+      user._id,
 
-      status:
-        'PENDING',
+    status:
+      'PENDING',
 
-      verifiedBy:
-        null,
+    verifiedBy:
+      null,
 
-      verifiedAt:
-        null,
-    })
+    verifiedAt:
+      null,
+  })
 
-  return payment
+  try {
+  await notifyPropertyManagerPaymentReceived({
+    payment,
+  })
+} catch (error) {
+  console.error(
+    'Failed to create PAYMENT_RECEIVED notification:',
+    error
+  )
+}
+
+return payment
 }
 
 // --------------------------------------------------
@@ -934,6 +1120,37 @@ export const verifyPayment = async ({
       session,
     })
 
+    // Notify tenant that payment was verified.
+try {
+  await createNotification({
+    recipient: payment.recordedBy,
+    organization: payment.organization,
+    property: payment.property,
+    type: 'PAYMENT_VERIFIED',
+    title: 'Payment Verified',
+    message: `Your rent payment of ₹${payment.amount} has been verified successfully.`,
+    data: {
+      paymentId: payment._id,
+      tenantId: payment.tenant,
+      rentDueId: payment.rentDue,
+      amount: payment.amount,
+      method: payment.method,
+      transactionReference:
+        payment.transactionReference,
+      status: payment.status,
+    },
+    createdBy: user._id,
+    session,
+  })
+} catch (error) {
+  console.error(
+    'Failed to create PAYMENT_VERIFIED notification:',
+    error
+  )
+
+  throw error
+}
+
     await session.commitTransaction()
 
     return payment
@@ -1016,7 +1233,36 @@ export const rejectPayment = async ({
 
   await payment.save()
 
-  return payment
+try {
+  await createNotification({
+    recipient: payment.recordedBy,
+    organization: payment.organization,
+    property: payment.property,
+    type: 'PAYMENT_REJECTED',
+    title: 'Payment Rejected',
+    message: `Your rent payment of ₹${payment.amount} was rejected.${payment.rejectionReason ? ` Reason: ${payment.rejectionReason}` : ''}`,
+    data: {
+      paymentId: payment._id,
+      tenantId: payment.tenant,
+      rentDueId: payment.rentDue,
+      amount: payment.amount,
+      method: payment.method,
+      transactionReference:
+        payment.transactionReference,
+      status: payment.status,
+      rejectionReason:
+        payment.rejectionReason,
+    },
+    createdBy: user._id,
+  })
+} catch (error) {
+  console.error(
+    'Failed to create PAYMENT_REJECTED notification:',
+    error
+  )
+}
+
+return payment
 }
 
 export const getTenantPaymentHistory = async ({

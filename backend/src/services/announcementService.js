@@ -8,6 +8,7 @@ import PropertyManagerAssignment from '../models/PropertyManagerAssignment.js'
 
 import { PERMISSIONS } from '../constants/permissions.js'
 import { announcementListQuerySchema } from '../validators/announcementValidator.js'
+import { createNotifications } from './notificationService.js'
 
 // --------------------------------------------------
 // ERROR HELPER
@@ -941,6 +942,10 @@ export const publishAnnouncement =
 
     await announcement.save()
 
+    await createAnnouncementNotifications({
+      announcement,
+    })
+
     return announcement
   }
 
@@ -1009,4 +1014,114 @@ export const cancelAnnouncement =
     await announcement.save()
 
     return announcement
+  }
+
+  const createAnnouncementNotifications =
+  async ({
+    announcement,
+    session = null,
+  }) => {
+    let tenantIds = []
+
+    if (
+      announcement.audience ===
+      'SPECIFIC_TENANT'
+    ) {
+      if (
+        announcement.targetTenant
+      ) {
+        tenantIds = [
+          announcement
+            .targetTenant,
+        ]
+      }
+    } else {
+      const allocations =
+        await Allocation.find({
+          organization:
+            announcement.organization,
+
+          property:
+            announcement.property,
+
+          status: 'ACTIVE',
+        })
+          .select('tenant')
+          .session(session)
+
+      tenantIds =
+        allocations.map(
+          (allocation) =>
+            allocation.tenant
+        )
+    }
+
+    if (!tenantIds.length) {
+      return []
+    }
+
+    const tenants =
+      await Tenant.find({
+        _id: {
+          $in: tenantIds,
+        },
+
+        organization:
+          announcement.organization,
+
+        user: {
+          $ne: null,
+        },
+      })
+        .select('user')
+        .session(session)
+
+    const recipients =
+      tenants
+        .map(
+          (tenant) =>
+            tenant.user
+        )
+        .filter(Boolean)
+
+    if (!recipients.length) {
+      return []
+    }
+
+    return createNotifications({
+      recipients,
+
+      organization:
+        announcement.organization,
+
+      property:
+        announcement.property,
+
+      type: 'ANNOUNCEMENT',
+
+      title:
+        announcement.title,
+
+      message:
+        announcement.message,
+
+      data: {
+        announcementId:
+          announcement._id,
+
+        priority:
+          announcement.priority,
+
+        announcementType:
+          announcement.type,
+
+        audience:
+          announcement.audience,
+      },
+
+      createdBy:
+        announcement.createdBy,
+
+      session,
+    })
   }

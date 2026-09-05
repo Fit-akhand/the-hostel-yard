@@ -95,6 +95,9 @@ router.get(
 router.get(
   '/:tenantId',
   protect,
+  validateParams(
+    tenantIdParamSchema
+  ),
   getTenantById
 )
 

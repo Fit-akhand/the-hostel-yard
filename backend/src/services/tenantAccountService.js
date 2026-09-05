@@ -428,3 +428,136 @@ export const acceptTenantInvitation =
       },
     }
   }
+
+  export const forgotPassword =
+  async ({ email }) => {
+
+    const user =
+      await User.findOne({
+        email,
+        status: 'ACTIVE',
+      })
+
+    if (!user) {
+      return
+    }
+
+    // Cancel previous reset tokens
+    await PasswordResetToken.updateMany(
+      {
+        user: user._id,
+        usedAt: null,
+      },
+      {
+        $set: {
+          usedAt: new Date(),
+        },
+      }
+    )
+
+    const rawToken =
+      crypto
+        .randomBytes(32)
+        .toString('hex')
+
+    const tokenHash =
+      crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex')
+
+    const expiresAt =
+      new Date(
+        Date.now() +
+          15 * 60 * 1000
+      )
+
+    await PasswordResetToken.create({
+      user: user._id,
+      tokenHash,
+      expiresAt,
+    })
+
+    const frontendUrl =
+      process.env.FRONTEND_URL
+
+    const resetUrl =
+      `${frontendUrl}/reset-password?token=${rawToken}`
+
+    // Send email here
+    // await sendPasswordResetEmail(...)
+
+    return {
+      resetUrl,
+    }
+  }
+
+  export const resetPassword =
+  async ({
+    token,
+    password,
+  }) => {
+
+    const tokenHash =
+      crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex')
+
+    const resetToken =
+      await PasswordResetToken.findOne({
+        tokenHash,
+        usedAt: null,
+      })
+
+    if (!resetToken) {
+      throw createError(
+        'Invalid or expired password reset link.',
+        400
+      )
+    }
+
+    if (
+      resetToken.expiresAt <
+      new Date()
+    ) {
+      throw createError(
+        'Invalid or expired password reset link.',
+        400
+      )
+    }
+
+    const user =
+      await User.findOne({
+        _id: resetToken.user,
+        status: 'ACTIVE',
+      }).select('+passwordHash')
+
+    if (!user) {
+      throw createError(
+        'Account is no longer available.',
+        404
+      )
+    }
+
+    const passwordHash =
+      await bcrypt.hash(
+        password,
+        12
+      )
+
+    user.passwordHash =
+      passwordHash
+
+    await user.save()
+
+    resetToken.usedAt =
+      new Date()
+
+    await resetToken.save()
+
+    return {
+      success: true,
+    }
+  }
+  
