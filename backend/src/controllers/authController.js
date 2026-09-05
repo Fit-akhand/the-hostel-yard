@@ -2,6 +2,8 @@ import {
   setupBusinessOwner,
   verifyBusinessOwnerSetup,
   loginUser,
+  forgotPassword as forgotPasswordService,
+  resetPassword as resetPasswordService,
 } from '../services/authService.js'
 
 export const setupOwner = async (req, res, next) => {
@@ -116,3 +118,45 @@ export const ownerTest = async (req, res) => {
     },
   })
 }
+
+export const forgotPassword = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const result =
+      await forgotPasswordService({
+        email: req.body.email,
+      })
+
+    // Always return the same response,
+    // whether the email exists or not.
+    res.status(200).json({
+  success: true,
+  message:
+    'If an account exists with this email, a password reset link has been sent.',
+  data: result || undefined,
+})
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const resetPassword =
+  async (req, res, next) => {
+    try {
+      await resetPasswordService({
+        token: req.body.token,
+        password: req.body.password,
+      })
+
+      res.status(200).json({
+        success: true,
+        message:
+          'Password reset successfully. Please login again.',
+      })
+    } catch (error) {
+      next(error)
+    }
+  }

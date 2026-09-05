@@ -7,6 +7,8 @@ import {
   getMe,
   logout,
   ownerTest,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/authController.js'
 
 import { validate } from '../middlewares/validateMiddleware.js'
@@ -17,6 +19,8 @@ import {
   setupOwnerSchema,
   verifyOwnerSetupSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from '../validators/authValidator.js'
 
 const router = express.Router()
@@ -39,6 +43,18 @@ router.post(
   login
 )
 
+router.post(
+  '/forgot-password',
+  validate(forgotPasswordSchema),
+  forgotPassword
+)
+
+router.post(
+  '/reset-password',
+  validate(resetPasswordSchema),
+  resetPassword
+)
+
 router.get('/me', protect, getMe)
 
 router.post('/logout', protect, logout)
@@ -49,5 +65,6 @@ router.get(
   authorizeRoles('BUSINESS_OWNER'),
   ownerTest
 )
+
 
 export default router

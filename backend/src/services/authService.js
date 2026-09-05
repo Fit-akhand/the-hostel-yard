@@ -7,6 +7,195 @@ import { generateAccessToken } from '../utils/token.js'
 
 import { createOtp, verifyOtp } from './otpService.js'
 
+import crypto from 'crypto'
+import PasswordResetToken from '../models/PasswordResetToken.js'
+const createError = (
+  message,
+  statusCode
+) => {
+  const error = new Error(message)
+  error.statusCode = statusCode
+  return error
+}
+
+export const forgotPassword = async ({
+  email,
+}) => {
+  const normalizedEmail =
+    email.trim().toLowerCase()
+
+  const user = await User.findOne({
+    email: normalizedEmail,
+  })
+
+  // Security:
+  // Never reveal whether an account exists.
+  if (!user) {
+    return
+  }
+
+  // Invalidate previous reset tokens
+  await PasswordResetToken.updateMany(
+    {
+      user: user._id,
+      usedAt: null,
+    },
+    {
+      $set: {
+        usedAt: new Date(),
+      },
+    }
+  )
+
+  const rawToken =
+    crypto.randomBytes(32).toString('hex')
+
+  const tokenHash =
+    crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex')
+
+  const expiresAt =
+    new Date(
+      Date.now() + 15 * 60 * 1000
+    )
+
+  await PasswordResetToken.create({
+    user: user._id,
+    tokenHash,
+    expiresAt,
+  })
+
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    'http://localhost:5173'
+
+  const resetUrl =
+    `${frontendUrl}/reset-password?token=${rawToken}`
+
+  // TODO:
+  // Send resetUrl using your email service.
+  //
+  // await sendPasswordResetEmail({
+  //   email: user.email,
+  //   name: user.name,
+  //   resetUrl,
+  // })
+
+  // DO NOT return resetUrl in production.
+  return {
+  resetUrl,
+  expiresAt,
+}
+}
+
+export const resetPassword = async ({
+  token,
+  password,
+}) => {
+  if (!token) {
+    throw createError(
+      'Password reset token is required.',
+      400
+    )
+  }
+
+  // Hash the raw token received from frontend
+  const tokenHash =
+    crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex')
+
+  // Find valid, unused token
+  const resetToken =
+    await PasswordResetToken.findOne({
+      tokenHash,
+      usedAt: null,
+      expiresAt: {
+        $gt: new Date(),
+      },
+    })
+
+  if (!resetToken) {
+    throw createError(
+      'Invalid or expired password reset token.',
+      400
+    )
+  }
+
+  // Find user
+  const user =
+    await User.findById(
+      resetToken.user
+    ).select('+passwordHash')
+
+  if (!user) {
+    throw createError(
+      'Account not found.',
+      404
+    )
+  }
+
+  // Suspended/deactivated users cannot reset
+  if (
+    user.status === 'SUSPENDED' ||
+    user.status === 'DEACTIVATED'
+  ) {
+    throw createError(
+      'This account cannot reset its password.',
+      403
+    )
+  }
+
+  // Hash new password
+  const passwordHash =
+    await bcrypt.hash(
+      password,
+      12
+    )
+
+  user.passwordHash =
+    passwordHash
+
+  // Invalidate all existing JWTs
+  user.tokenVersion += 1
+
+  // IMPORTANT:
+  // If an invited user somehow uses forgot-password,
+  // this activates the account.
+  if (
+    user.status === 'INVITED'
+  ) {
+    user.status = 'ACTIVE'
+  }
+
+  await user.save()
+
+  // Mark current reset token as used
+  resetToken.usedAt =
+    new Date()
+
+  await resetToken.save()
+
+  // Invalidate any other active reset tokens
+  await PasswordResetToken.updateMany(
+    {
+      user: user._id,
+      _id: {
+        $ne: resetToken._id,
+      },
+      usedAt: null,
+    },
+    {
+      $set: {
+        usedAt: new Date(),
+      },
+    }
+  )
+}
+
 export const setupBusinessOwner = async ({
   name,
   phone,

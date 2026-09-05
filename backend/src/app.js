@@ -17,6 +17,9 @@ import complaintRoutes from './routes/complaintRoutes.js'
 import announcementRoutes from './routes/announcementRoutes.js'
 import bookingRoutes from './routes/bookingRoutes.js'
 import staffRoutes from './routes/staffRoutes.js'
+import dashboardRoutes from './modules/dashboard/dashboardRoutes.js'
+import reportRoutes from './modules/reports/reportRoutes.js'
+import notificationRoutes from './routes/notificationRoutes.js'
 
 import {
   errorHandler,
@@ -160,6 +163,18 @@ app.use(
 app.use(
   '/api/staff',
   staffRoutes
+)
+
+app.use(
+  '/api/dashboard',
+  dashboardRoutes
+)
+
+app.use('/api/reports', reportRoutes)
+
+app.use(
+  '/api/notifications',
+  notificationRoutes
 )
 
 // --------------------------------------------------
