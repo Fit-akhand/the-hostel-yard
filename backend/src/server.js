@@ -12,4 +12,7 @@ const startServer = async () => {
   })
 }
 
-startServer()
+startServer().catch((error) => {
+  console.error(error.message)
+  process.exit(1)
+})

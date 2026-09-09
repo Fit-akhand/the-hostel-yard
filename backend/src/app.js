@@ -28,11 +28,36 @@ import {
 
 const app = express()
 
+app.set('trust proxy', 1)
+
+const toOrigin = (value) => {
+  if (!value) return null
+  const trimmed = value.replace(/\/$/, '')
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+const allowedOrigins = new Set(
+  [
+    toOrigin(process.env.FRONTEND_URL),
+    toOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL),
+    toOrigin(process.env.VERCEL_URL),
+    'http://localhost:5173',
+    'http://localhost:4173',
+  ].filter(Boolean)
+)
+
 app.use(
   cors({
-    origin:
-      process.env.FRONTEND_URL ||
-      'http://localhost:5173',
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true)
+        return
+      }
+      callback(null, false)
+    },
     credentials: true,
   })
 )
