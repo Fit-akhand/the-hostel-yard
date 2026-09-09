@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+@theme {
+  /* ─────────────────────────────────────────────
+     Typography
+     ───────────────────────────────────────────── */
+
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  /* ─────────────────────────────────────────────
+     Brand / Navy
+     Deep, premium, professional
+     ───────────────────────────────────────────── */
+
+  --color-navy-950: #080c16;
+  --color-navy-900: #0f172a;
+  --color-navy-800: #172033;
+  --color-navy-700: #243047;
+  --color-navy-600: #34435c;
+
+  /* ─────────────────────────────────────────────
+     Text / Ink
+     ───────────────────────────────────────────── */
+
+  --color-ink-950: #111827;
+  --color-ink-800: #1f2937;
+  --color-ink-600: #64748b;
+  --color-ink-400: #94a3b8;
+  --color-ink-200: #cbd5e1;
+  --color-ink-100: #e2e8f0;
+  --color-ink-50: #f8fafc;
+
+  /* ─────────────────────────────────────────────
+     Surfaces
+     Clean neutral SaaS appearance
+     ───────────────────────────────────────────── */
+
+  --color-paper: #f7f8fa;
+  --color-card: #ffffff;
+  --color-line: #e5e7eb;
+
+  /* ─────────────────────────────────────────────
+     The Hostel Yard Brand
+     ───────────────────────────────────────────── */
+
+  --color-brand: #dc2626;
+  --color-brand-dark: #b91c1c;
+  --color-brand-soft: #fef2f2;
+
+  /* Kept for existing components that use gold */
+  --color-gold-soft: #f1e4cc;
+
+  /* ─────────────────────────────────────────────
+     Semantic states
+     ───────────────────────────────────────────── */
+
+  --color-success: #15803d;
+  --color-success-bg: #f0fdf4;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+
+  --color-danger: #b42318;
+  --color-danger-bg: #fef2f2;
+
+  --color-info: #2563eb;
+  --color-info-bg: #eff6ff;
+}
+
+/* ───────────────────────────────────────────────
+   Global design tokens
+   ─────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  --thy-bg: var(--color-paper);
+  --thy-card: var(--color-card);
+
+  --thy-text: var(--color-ink-950);
+  --thy-muted: var(--color-ink-600);
+
+  --thy-border: var(--color-line);
+
+  --thy-primary: var(--color-brand);
+  --thy-primary-hover: var(--color-brand-dark);
+  --thy-accent: var(--color-brand);
+
+  /*
+   * Softer premium shadow system.
+   * Avoids the heavy "floating card" appearance.
+   */
+  --thy-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.035);
+
+  --thy-shadow-lg:
+    0 4px 6px rgba(15, 23, 42, 0.04),
+    0 12px 32px rgba(15, 23, 42, 0.07);
+
+  --thy-radius: 12px;
+  --thy-radius-sm: 8px;
+  --thy-radius-lg: 16px;
+
+  --thy-focus-ring: rgba(220, 38, 38, 0.18);
+}
+
+/* ───────────────────────────────────────────────
+   Box model
+   ─────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ───────────────────────────────────────────────
+   Root
+   ─────────────────────────────────────────────── */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: var(--thy-bg);
+  text-rendering: optimizeLegibility;
+}
+
+/* ───────────────────────────────────────────────
+   Body
+   ─────────────────────────────────────────────── */
+
+body {
+  margin: 0;
+  background: var(--thy-bg);
+  color: var(--thy-text);
+
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ───────────────────────────────────────────────
+   Typography
+   ─────────────────────────────────────────────── */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+}
+
+p {
+  margin-top: 0;
+}
+
+/* ───────────────────────────────────────────────
+   Links
+   ─────────────────────────────────────────────── */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ───────────────────────────────────────────────
+   Form controls
+   ─────────────────────────────────────────────── */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-ink-400);
+  opacity: 1;
+}
+
+/* ───────────────────────────────────────────────
+   Selection
+   ─────────────────────────────────────────────── */
+
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+}
+
+/* ───────────────────────────────────────────────
+   Focus
+   ─────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--thy-focus-ring);
+}
+
+/* ───────────────────────────────────────────────
+   Scrollbars
+   ─────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ───────────────────────────────────────────────
+   Tables / numbers
+   ─────────────────────────────────────────────── */
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────────────────────────────────────────
+   Images
+   ─────────────────────────────────────────────── */
+
+img {
+  max-width: 100%;
+}
+
+/* ───────────────────────────────────────────────
+   Disabled elements
+   ─────────────────────────────────────────────── */
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* ───────────────────────────────────────────────
+   Reduced motion
+   ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ───────────────────────────────────────────────
+   Small screens
+   ─────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+}
