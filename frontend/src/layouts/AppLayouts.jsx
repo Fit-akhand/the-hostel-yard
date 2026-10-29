@@ -1,4 +1,5 @@
 import { LoginVisual } from '../components/auth/LoginVisual'
+import { DemoBanner } from '../components/ui/DemoBanner'
 import { GlobalSearch } from '../components/ui/GlobalSearch'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { useThemeStore } from '../store/themeStore'
@@ -678,6 +679,7 @@ export function DashboardLayout() {
       ) : null}
 
       <div className="lg:pl-[264px]">
+        <DemoBanner />
         {/* Header */}
         <header className="sticky top-0 z-20 border-b border-line bg-card">
           <div className="flex h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -841,6 +843,7 @@ export function TenantLayout() {
       ) : null}
 
       <div className="lg:pl-[264px]">
+        <DemoBanner />
         {/* Header */}
         <header className="sticky top-0 z-20 border-b border-line bg-card">
           <div className="flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8">

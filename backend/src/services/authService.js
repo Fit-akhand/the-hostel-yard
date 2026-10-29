@@ -449,3 +449,50 @@ export const loginUser = async ({
     },
   }
 }
+
+// --------------------------------------------------
+// DEMO (GUEST) LOGIN
+// --------------------------------------------------
+
+const DEMO_ROLES = {
+  OWNER: 'BUSINESS_OWNER',
+  MANAGER: 'PROPERTY_MANAGER',
+  TENANT: 'TENANT',
+}
+
+export const DEMO_SESSION_MS = 2 * 60 * 60 * 1000
+
+export const demoLogin = async ({ role }) => {
+  if (process.env.DEMO_MODE_ENABLED === 'false') {
+    const error = new Error('Demo mode is disabled.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const user = await User.findOne({
+    isDemo: true,
+    role: DEMO_ROLES[role],
+    status: 'ACTIVE',
+  })
+
+  if (!user) {
+    const error = new Error(
+      'Demo data is not set up yet.'
+    )
+    error.statusCode = 404
+    throw error
+  }
+
+  return {
+    accessToken: generateAccessToken(user, '2h'),
+    user: {
+      id: user._id,
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      role: user.role,
+      organization: user.organization,
+      isDemo: true,
+    },
+  }
+}

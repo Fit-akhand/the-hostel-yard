@@ -33,6 +33,19 @@ export const protect = async (req, res, next) => {
       })
     }
 
+    // Shared demo guests may look around but never change data.
+    if (
+      user.isDemo &&
+      !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+      !req.originalUrl.startsWith('/api/auth/logout')
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          'This is a read-only demo. Sign in with your own account to make changes.',
+      })
+    }
+
     req.user = user
 
     next()

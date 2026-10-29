@@ -1,3 +1,4 @@
+import { Building2, UserCog, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
@@ -29,8 +30,16 @@ function PasswordField({ id, value, onChange, error, label = 'Password', autoCom
   )
 }
 
+const DEMO_ROLES = [
+  { role: 'OWNER', label: 'Owner', hint: 'All properties & reports', Icon: Building2 },
+  { role: 'MANAGER', label: 'Manager', hint: 'Daily operations', Icon: UserCog },
+  { role: 'TENANT', label: 'Tenant', hint: 'Resident view', Icon: UserRound },
+]
+
 export function LoginPage() {
   const login = useAuthStore((s) => s.login)
+  const loginDemo = useAuthStore((s) => s.loginDemo)
+  const [demoLoading, setDemoLoading] = useState('')
   const navigate = useNavigate()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -52,6 +61,20 @@ export function LoginPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function enterDemo(role) {
+    setDemoLoading(role)
+    setError('')
+    try {
+      const user = await loginDemo(role)
+      toast.success('Exploring the live demo with sample data.')
+      navigate(homePath(user.role), { replace: true })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDemoLoading('')
     }
   }
 
@@ -77,6 +100,34 @@ export function LoginPage() {
         <Link to="/setup-owner" className="underline-offset-4 hover:underline">
           First-time setup
         </Link>
+      </div>
+
+      <div className="mt-7 border-t border-line pt-6">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">
+          Just looking? Explore the live demo
+        </p>
+        <p className="mt-1 text-center text-xs text-ink-600">No sign-in needed. Sample data, read-only.</p>
+        <div className="mt-4 grid grid-cols-3 gap-2.5">
+          {DEMO_ROLES.map(({ role, label, hint, Icon }) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => enterDemo(role)}
+              disabled={Boolean(demoLoading)}
+              className="bg-card group flex flex-col items-center gap-1.5 rounded-xl border border-line px-2 py-3.5 text-center transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md disabled:opacity-60"
+            >
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-brand">
+                {demoLoading === role ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Icon size={18} />
+                )}
+              </span>
+              <span className="text-sm font-semibold text-ink-950">{label}</span>
+              <span className="text-[11px] leading-tight text-ink-600">{hint}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </Card>
   )

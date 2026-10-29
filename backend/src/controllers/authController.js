@@ -2,6 +2,8 @@ import {
   setupBusinessOwner,
   verifyBusinessOwnerSetup,
   loginUser,
+  demoLogin as demoLoginService,
+  DEMO_SESSION_MS,
   forgotPassword as forgotPasswordService,
   resetPassword as resetPasswordService,
 } from '../services/authService.js'
@@ -79,6 +81,7 @@ export const getMe = async (req, res, next) => {
           isPhoneVerified: req.user.isPhoneVerified,
           isEmailVerified: req.user.isEmailVerified,
           status: req.user.status,
+          isDemo: Boolean(req.user.isDemo),
         },
       },
     })
@@ -160,3 +163,28 @@ export const resetPassword =
       next(error)
     }
   }
+export const demoLogin = async (req, res, next) => {
+  try {
+    const result = await demoLoginService(req.body)
+
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite:
+        process.env.NODE_ENV === 'production'
+          ? 'none'
+          : 'lax',
+      maxAge: DEMO_SESSION_MS,
+    })
+
+    res.status(200).json({
+      success: true,
+      message: 'Signed in as a demo guest.',
+      data: {
+        user: result.user,
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}

@@ -104,3 +104,6 @@ export const forgotPasswordSchema =
         'Password cannot exceed 100 characters'
       ),
   })
+export const demoLoginSchema = z.object({
+  role: z.enum(['OWNER', 'MANAGER', 'TENANT']),
+})

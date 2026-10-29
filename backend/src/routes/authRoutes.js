@@ -4,6 +4,7 @@ import {
   setupOwner,
   verifyOwnerSetup,
   login,
+  demoLogin,
   getMe,
   logout,
   ownerTest,
@@ -19,6 +20,7 @@ import {
   setupOwnerSchema,
   verifyOwnerSetupSchema,
   loginSchema,
+  demoLoginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../validators/authValidator.js'
@@ -41,6 +43,12 @@ router.post(
   '/login',
   validate(loginSchema),
   login
+)
+
+router.post(
+  '/demo',
+  validate(demoLoginSchema),
+  demoLogin
 )
 
 router.post(

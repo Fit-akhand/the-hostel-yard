@@ -14,6 +14,11 @@ export const authApi = {
     return pickData(payload, 'user')
   },
 
+  demo: async (role) => {
+    const payload = unwrap(await apiClient.post('/auth/demo', { role }))
+    return pickData(payload, 'user')
+  },
+
   me: async () => {
     const payload = unwrap(await apiClient.get('/auth/me'))
     return pickData(payload, 'user')

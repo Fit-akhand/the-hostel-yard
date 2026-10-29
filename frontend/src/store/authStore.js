@@ -66,6 +66,18 @@ export const useAuthStore = create((set, get) => ({
     return user
   },
 
+  loginDemo: async (role) => {
+    const user = await authApi.demo(role)
+
+    set({
+      user,
+      status: 'authenticated',
+      bootstrapped: true,
+    })
+
+    return user
+  },
+
   logout: async () => {
     try {
       await authApi.logout()

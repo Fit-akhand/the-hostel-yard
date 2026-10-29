@@ -80,6 +80,13 @@ const userSchema = new mongoose.Schema(
       default: 'PENDING_VERIFICATION',
     },
 
+    // Shared guest accounts used by the public demo login. They are read-only.
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
     lastLoginAt: {
       type: Date,
       default: null,
