@@ -1,17 +1,9 @@
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  /* ─────────────────────────────────────────────
-     Typography
-     ───────────────────────────────────────────── */
-
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
-
-  /* ─────────────────────────────────────────────
-     Brand / Navy
-     Deep, premium, professional
-     ───────────────────────────────────────────── */
 
   --color-navy-950: #080c16;
   --color-navy-900: #0f172a;
@@ -19,281 +11,184 @@
   --color-navy-700: #243047;
   --color-navy-600: #34435c;
 
-  /* ─────────────────────────────────────────────
-     Text / Ink
-     ───────────────────────────────────────────── */
-
-  --color-ink-950: #111827;
+  /* Theme-aware tokens: light values here, dark overrides below. */
+  --color-ink-950: #0f172a;
+  --color-ink-900: #1e293b;
   --color-ink-800: #1f2937;
+  --color-ink-700: #475569;
   --color-ink-600: #64748b;
+  --color-ink-500: #7b8798;
   --color-ink-400: #94a3b8;
-  --color-ink-200: #cbd5e1;
-  --color-ink-100: #e2e8f0;
-  --color-ink-50: #f8fafc;
+  --color-ink-300: #cbd5e1;
+  --color-ink-200: #cdd5e1;
+  --color-ink-100: rgba(148, 163, 184, 0.18);
+  --color-ink-50: rgba(255, 255, 255, 0.5);
 
-  /* ─────────────────────────────────────────────
-     Surfaces
-     Clean neutral SaaS appearance
-     ───────────────────────────────────────────── */
-
-  --color-paper: #f7f8fa;
-  --color-card: #ffffff;
-  --color-line: #e5e7eb;
-
-  /* ─────────────────────────────────────────────
-     The Hostel Yard Brand
-     ───────────────────────────────────────────── */
+  --color-paper: #eef1f8;
+  --color-card: rgba(255, 255, 255, 0.64);
+  --color-line: rgba(148, 163, 184, 0.30);
 
   --color-brand: #dc2626;
   --color-brand-dark: #b91c1c;
-  --color-brand-soft: #fef2f2;
-
-  /* Kept for existing components that use gold */
+  --color-brand-soft: rgba(254, 226, 226, 0.7);
   --color-gold-soft: #f1e4cc;
 
-  /* ─────────────────────────────────────────────
-     Semantic states
-     ───────────────────────────────────────────── */
-
   --color-success: #15803d;
-  --color-success-bg: #f0fdf4;
-
+  --color-success-bg: rgba(220, 252, 231, 0.7);
   --color-warning: #b45309;
-  --color-warning-bg: #fffbeb;
-
+  --color-warning-bg: rgba(254, 243, 199, 0.7);
   --color-danger: #b42318;
-  --color-danger-bg: #fef2f2;
-
+  --color-danger-bg: rgba(254, 226, 226, 0.7);
   --color-info: #2563eb;
-  --color-info-bg: #eff6ff;
+  --color-info-bg: rgba(219, 234, 254, 0.7);
 }
 
-/* ───────────────────────────────────────────────
-   Global design tokens
-   ─────────────────────────────────────────────── */
+/* ── Dark theme ───────────────────────────────── */
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-ink-950: #f4f6fb;
+  --color-ink-900: #e8ecf5;
+  --color-ink-800: #d5dbe8;
+  --color-ink-700: #b9c2d4;
+  --color-ink-600: #98a3b8;
+  --color-ink-500: #7d889e;
+  --color-ink-400: #6f7a90;
+  --color-ink-300: #4a5468;
+  --color-ink-200: #3a4359;
+  --color-ink-100: rgba(255, 255, 255, 0.08);
+  --color-ink-50: rgba(255, 255, 255, 0.05);
+
+  --color-paper: #070a12;
+  --color-card: rgba(255, 255, 255, 0.055);
+  --color-line: rgba(255, 255, 255, 0.10);
+
+  --color-brand: #ef4444;
+  --color-brand-dark: #dc2626;
+  --color-brand-soft: rgba(239, 68, 68, 0.16);
+  --color-gold-soft: rgba(241, 228, 204, 0.16);
+
+  --color-success: #4ade80;
+  --color-success-bg: rgba(34, 197, 94, 0.14);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-danger: #f87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.16);
+  --color-info: #60a5fa;
+  --color-info-bg: rgba(59, 130, 246, 0.16);
+
+  --thy-orb-1: rgba(239, 68, 68, 0.22);
+  --thy-orb-2: rgba(99, 102, 241, 0.20);
+  --thy-orb-3: rgba(20, 184, 166, 0.12);
+  --thy-sheen: rgba(255, 255, 255, 0.07);
+  --thy-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --thy-scroll: rgba(255, 255, 255, 0.18);
+  --thy-scroll-hover: rgba(255, 255, 255, 0.3);
+}
 
 :root {
   color-scheme: light;
 
   --thy-bg: var(--color-paper);
-  --thy-card: var(--color-card);
-
   --thy-text: var(--color-ink-950);
-  --thy-muted: var(--color-ink-600);
-
-  --thy-border: var(--color-line);
-
-  --thy-primary: var(--color-brand);
-  --thy-primary-hover: var(--color-brand-dark);
-  --thy-accent: var(--color-brand);
-
-  /*
-   * Softer premium shadow system.
-   * Avoids the heavy "floating card" appearance.
-   */
-  --thy-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 4px 12px rgba(15, 23, 42, 0.035);
-
-  --thy-shadow-lg:
-    0 4px 6px rgba(15, 23, 42, 0.04),
-    0 12px 32px rgba(15, 23, 42, 0.07);
-
-  --thy-radius: 12px;
-  --thy-radius-sm: 8px;
-  --thy-radius-lg: 16px;
-
-  --thy-focus-ring: rgba(220, 38, 38, 0.18);
+  --thy-orb-1: rgba(244, 114, 114, 0.35);
+  --thy-orb-2: rgba(129, 140, 248, 0.32);
+  --thy-orb-3: rgba(45, 212, 191, 0.22);
+  --thy-sheen: rgba(255, 255, 255, 0.55);
+  --thy-glass-shadow: 0 8px 32px rgba(31, 41, 90, 0.10);
+  --thy-scroll: #cbd5e1;
+  --thy-scroll-hover: #94a3b8;
+  --thy-focus-ring: rgba(220, 38, 38, 0.2);
 }
 
-/* ───────────────────────────────────────────────
-   Box model
-   ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* ───────────────────────────────────────────────
-   Root
-   ─────────────────────────────────────────────── */
-
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
-html {
-  background: var(--thy-bg);
-  text-rendering: optimizeLegibility;
-}
-
-/* ───────────────────────────────────────────────
-   Body
-   ─────────────────────────────────────────────── */
+html, body, #root { min-height: 100%; }
+html { background: var(--thy-bg); text-rendering: optimizeLegibility; }
 
 body {
   margin: 0;
-  background: var(--thy-bg);
   color: var(--thy-text);
-
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.5;
-
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ───────────────────────────────────────────────
-   Typography
-   ─────────────────────────────────────────────── */
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.025em;
+/* Ambient colour field behind the glass */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(48vw 48vw at 8% 6%, var(--thy-orb-1), transparent 62%),
+    radial-gradient(52vw 52vw at 96% 14%, var(--thy-orb-2), transparent 62%),
+    radial-gradient(56vw 56vw at 62% 104%, var(--thy-orb-3), transparent 62%);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin-top: 0;
+h1, h2, h3, h4, h5, h6, .font-display { font-family: var(--font-display); letter-spacing: -0.025em; }
+h1, h2, h3, h4, h5, h6, p { margin-top: 0; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+input::placeholder, textarea::placeholder { color: var(--color-ink-400); opacity: 1; }
+::selection { background: var(--color-brand-soft); color: var(--color-brand-dark); }
+
+/* ── Glass surfaces ───────────────────────────────
+   Every component that uses the card token becomes frosted glass. */
+.bg-card,
+.glass {
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  background-image: linear-gradient(135deg, var(--thy-sheen), transparent 55%);
 }
 
-p {
-  margin-top: 0;
+.glass {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--thy-glass-shadow), inset 0 1px 0 var(--thy-sheen);
 }
 
-/* ───────────────────────────────────────────────
-   Links
-   ─────────────────────────────────────────────── */
-
-a {
-  color: inherit;
-  text-decoration: none;
+.glass-strong {
+  background-color: color-mix(in srgb, var(--color-card) 100%, var(--color-paper) 0%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
 }
 
-/* ───────────────────────────────────────────────
-   Form controls
-   ─────────────────────────────────────────────── */
+html[data-theme="dark"] .bg-card { border-color: var(--color-line); }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--color-ink-400);
-  opacity: 1;
-}
-
-/* ───────────────────────────────────────────────
-   Selection
-   ─────────────────────────────────────────────── */
-
-::selection {
-  background: var(--color-brand-soft);
-  color: var(--color-brand-dark);
-}
-
-/* ───────────────────────────────────────────────
-   Focus
-   ─────────────────────────────────────────────── */
-
-:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
-}
-
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-button:focus-visible {
+/* Focus */
+:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px var(--thy-focus-ring);
 }
 
-/* ───────────────────────────────────────────────
-   Scrollbars
-   ─────────────────────────────────────────────── */
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--thy-scroll) transparent; }
+*::-webkit-scrollbar { width: 7px; height: 7px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--thy-scroll); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--thy-scroll-hover); }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+/* Native form popups follow the theme */
+html[data-theme="dark"] select option { background: #0f172a; color: #e8ecf5; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+img { max-width: 100%; }
+button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; }
+
+/* Smooth theme switch */
+html.theme-transition, html.theme-transition *, html.theme-transition *::before, html.theme-transition *::after {
+  transition: background-color .35s ease, border-color .35s ease, color .25s ease !important;
 }
-
-*::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* ───────────────────────────────────────────────
-   Tables / numbers
-   ─────────────────────────────────────────────── */
-
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ───────────────────────────────────────────────
-   Images
-   ─────────────────────────────────────────────── */
-
-img {
-  max-width: 100%;
-}
-
-/* ───────────────────────────────────────────────
-   Disabled elements
-   ─────────────────────────────────────────────── */
-
-button:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled {
-  cursor: not-allowed;
-}
-
-/* ───────────────────────────────────────────────
-   Reduced motion
-   ─────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -301,12 +196,8 @@ textarea:disabled {
   }
 }
 
-/* ───────────────────────────────────────────────
-   Small screens
-   ─────────────────────────────────────────────── */
+@media (max-width: 640px) { body { font-size: 14px; } }
 
-@media (max-width: 640px) {
-  body {
-    font-size: 14px;
-  }
-}
+@keyframes login-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+.login-float { animation: login-float 7s ease-in-out infinite; }
+.login-float-slow { animation: login-float 9s ease-in-out infinite; animation-delay: -3s; }

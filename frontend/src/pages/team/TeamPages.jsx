@@ -11,33 +11,71 @@ import { asArray } from '../../utils/collections'
 import { MANAGER_ALLOWED_PERMISSIONS, PERMISSION_GROUPS, PERMISSION_LABELS, STAFF_ALLOWED_PERMISSIONS } from '../../config/permissions'
 import { usePropertyStore } from '../../store/propertyStore'
 
+function PermissionSwitch({ checked, indeterminate, onChange, label, strong = false }) {
+  const ref = (el) => { if (el) el.indeterminate = Boolean(indeterminate) && !checked }
+  return (
+    <label className={`flex cursor-pointer items-center gap-2.5 text-sm ${strong ? 'font-semibold text-ink-950' : 'text-ink-800'}`}>
+      <input ref={ref} type="checkbox" className="h-4 w-4 accent-[var(--color-brand)]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  )
+}
+
 function PermissionPicker({ allowed, value, onChange }) {
+  const groups = PERMISSION_GROUPS
+    .map((group) => ({ ...group, keys: group.keys.filter((k) => allowed.includes(k)) }))
+    .filter((group) => group.keys.length)
+  const allKeys = groups.flatMap((g) => g.keys)
+  const selectedCount = allKeys.filter((k) => value.includes(k)).length
+
+  const setGroup = (keys, on) => {
+    const rest = value.filter((k) => !keys.includes(k))
+    onChange(on ? [...rest, ...keys] : rest)
+  }
+
   return (
     <div className="grid gap-4">
-      {PERMISSION_GROUPS.map((group) => {
-        const keys = group.keys.filter((k) => allowed.includes(k))
-        if (!keys.length) return null
-        return (
-          <fieldset key={group.label} className="rounded-lg border border-line p-3">
-            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-ink-400">{group.label}</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {keys.map((key) => (
-                <label key={key} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+      <div className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-ink-950">Permissions</p>
+          <p className="text-xs text-ink-600">{selectedCount} of {allKeys.length} allowed</p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => onChange([...allKeys])} disabled={selectedCount === allKeys.length}>Allow all</Button>
+          <Button size="sm" variant="ghost" onClick={() => onChange([])} disabled={!selectedCount}>Clear all</Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {groups.map((group) => {
+          const picked = group.keys.filter((k) => value.includes(k)).length
+          const all = picked === group.keys.length
+          return (
+            <fieldset key={group.label} className="bg-card rounded-xl border border-line p-4">
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-line pb-2.5">
+                <legend className="float-left text-xs font-semibold uppercase tracking-[0.14em] text-ink-600">{group.label}</legend>
+                <PermissionSwitch
+                  strong
+                  checked={all}
+                  indeterminate={picked > 0}
+                  onChange={(on) => setGroup(group.keys, on)}
+                  label={<span className="text-xs">{all ? 'All allowed' : `Allow all (${picked}/${group.keys.length})`}</span>}
+                />
+              </div>
+              <div className="grid gap-2">
+                {group.keys.map((key) => (
+                  <PermissionSwitch
+                    key={key}
                     checked={value.includes(key)}
-                    onChange={(e) => {
-                      if (e.target.checked) onChange([...value, key])
-                      else onChange(value.filter((k) => k !== key))
-                    }}
+                    onChange={(on) => onChange(on ? [...value, key] : value.filter((k) => k !== key))}
+                    label={PERMISSION_LABELS[key] || key}
                   />
-                  {PERMISSION_LABELS[key] || key}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )
-      })}
+                ))}
+              </div>
+            </fieldset>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -248,7 +286,7 @@ export function StaffDetailPage() {
           <span className="grid gap-3">
             <span>Suspended or removed staff lose property access according to the backend.</span>
             <select
-              className="h-11 w-full rounded-lg border border-line bg-white px-3"
+              className="h-11 w-full rounded-lg border border-line bg-card px-3"
               value={nextStatus}
               onChange={(e) => setNextStatus(e.target.value)}
             >

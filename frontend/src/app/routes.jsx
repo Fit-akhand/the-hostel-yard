@@ -71,29 +71,29 @@ import { Link } from 'react-router-dom'
 
 function NotFound() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA] px-4 py-8 sm:px-6">
+    <div className="min-h-screen bg-transparent px-4 py-8 sm:px-6">
       <div className="flex min-h-[70vh] items-center justify-center">
-        <Card className="w-full max-w-lg border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+        <Card className="w-full max-w-lg border border-line bg-card p-8 text-center shadow-sm sm:p-10">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft">
             <span
-              className="text-2xl font-bold text-[#E92323]"
+              className="text-2xl font-bold text-brand"
               aria-hidden="true"
             >
               404
             </span>
           </div>
 
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-[#171717] sm:text-3xl">
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink-950 sm:text-3xl">
             We couldn’t find that resource.
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-gray-500">
+          <p className="mt-3 text-sm leading-6 text-ink-600">
             The page you’re looking for may have been moved or may no longer
             be available.
           </p>
 
           <Link to="/dashboard">
-            <Button className="mt-7 bg-[#E92323] text-white hover:bg-[#C91C1C]">
+            <Button className="mt-7 bg-brand text-white hover:bg-brand-dark">
               Go home
             </Button>
           </Link>

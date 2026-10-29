@@ -2,6 +2,7 @@ import {
   createBed as createBedService,
   getBedsByRoom as getBedsByRoomService,
   getBedById as getBedByIdService,
+  getBedsByProperty as getBedsByPropertyService,
   updateBed as updateBedService,
   deactivateBed as deactivateBedService,
 } from '../services/bedService.js'
@@ -123,6 +124,30 @@ export const deactivateBed = async (
         'Bed deactivated successfully.',
       data: {
         bed,
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+export const getBedsByProperty = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const beds =
+      await getBedsByPropertyService({
+        user: req.user,
+        propertyId: req.query.propertyId,
+        status: req.query.status,
+      })
+
+    res.status(200).json({
+      success: true,
+      message: 'Beds retrieved successfully.',
+      data: {
+        beds,
       },
     })
   } catch (error) {

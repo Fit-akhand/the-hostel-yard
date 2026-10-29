@@ -537,3 +537,68 @@ export const getTenantRentPaymentInfo = async ({
     },
   }
 }
+export const generateMonthlyDues = async ({
+  user,
+  billingMonth,
+  propertyId,
+}) => {
+  if (!user.organization) {
+    throw createError(
+      'User is not associated with an organization.',
+      400
+    )
+  }
+
+  const planFilter = {
+    organization: user.organization,
+    status: 'ACTIVE',
+  }
+
+  if (propertyId) planFilter.property = propertyId
+
+  const plans = await RentPlan.find(planFilter)
+
+  // Access is checked once per property, not once per plan.
+  const propertyIds = [
+    ...new Set(plans.map((p) => String(p.property))),
+  ]
+
+  for (const id of propertyIds) {
+    await checkPropertyAccess({
+      user,
+      propertyId: id,
+      permission: 'ADD_DUES',
+    })
+  }
+
+  const existing = await RentDue.find({
+    rentPlan: { $in: plans.map((p) => p._id) },
+    billingMonth,
+  }).select('rentPlan')
+
+  const hasDue = new Set(existing.map((d) => String(d.rentPlan)))
+  const [year, month] = billingMonth.split('-').map(Number)
+
+  const toCreate = plans
+    .filter((plan) => !hasDue.has(String(plan._id)))
+    .map((plan) => ({
+      organization: plan.organization,
+      property: plan.property,
+      tenant: plan.tenant,
+      allocation: plan.allocation,
+      rentPlan: plan._id,
+      billingMonth,
+      dueDate: new Date(year, month - 1, plan.dueDay),
+      amount: plan.monthlyRent,
+      paidAmount: 0,
+      status: 'PENDING',
+    }))
+
+  if (toCreate.length) await RentDue.insertMany(toCreate)
+
+  return {
+    billingMonth,
+    created: toCreate.length,
+    skipped: plans.length - toCreate.length,
+  }
+}

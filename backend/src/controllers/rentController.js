@@ -1,6 +1,7 @@
 import {
   createRentPlan as createRentPlanService,
   generateRentDue as generateRentDueService,
+  generateMonthlyDues as generateMonthlyDuesService,
   getRentPlans as getRentPlansService,
   getRentDues as getRentDuesService,
   getTenantRentPaymentInfo as getTenantRentPaymentInfoService,
@@ -130,6 +131,28 @@ export const getTenantRentPaymentInfo = async (
       data: {
         paymentInfo,
       },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const generateMonthlyDues = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const result = await generateMonthlyDuesService({
+      user: req.user,
+      billingMonth: req.body.billingMonth,
+      propertyId: req.body.propertyId || undefined,
+    })
+
+    res.status(201).json({
+      success: true,
+      message: `Generated ${result.created} rent due(s).`,
+      data: result,
     })
   } catch (error) {
     next(error)

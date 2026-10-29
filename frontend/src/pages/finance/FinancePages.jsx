@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   allocationApi,
@@ -255,16 +255,68 @@ export function RentPage() {
     queryFn: () => rentApi.dues(status ? { status } : {}),
   })
   const plans = useQuery({ queryKey: ['rent-plans'], queryFn: () => rentApi.plans() })
+  const qc = useQueryClient()
+  const currentPropertyId = usePropertyStore((s) => s.currentPropertyId)
+  const inProperty = (row) =>
+    !currentPropertyId || (row.property?._id || row.property) === currentPropertyId
+  const visibleDues = asArray(dues.data).filter(inProperty)
+  const visiblePlans = asArray(plans.data).filter(inProperty)
+  const [genOpen, setGenOpen] = useState(false)
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [scope, setScope] = useState('property')
+  const generate = useMutation({
+    mutationFn: () =>
+      rentApi.generateMonthly({
+        billingMonth: month,
+        propertyId: scope === 'property' && currentPropertyId ? currentPropertyId : undefined,
+      }),
+    onSuccess: (r) => {
+      toast.success(
+        r.created
+          ? `Created ${r.created} rent due(s) for ${r.billingMonth}.` + (r.skipped ? ` ${r.skipped} already existed.` : '')
+          : `All dues for ${r.billingMonth} already exist.`
+      )
+      setGenOpen(false)
+      qc.invalidateQueries({ queryKey: ['rent-dues'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+    onError: (e) => toast.error(e.message),
+  })
   return (
     <div>
       <PageHeader
         title="Rent"
         actions={
           can(user, PERMISSIONS.ADD_DUES) ? (
-            <Link to="/rent/plans/new"><Button>New rent plan</Button></Link>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setGenOpen(true)}>Generate monthly dues</Button>
+              <Link to="/rent/plans/new"><Button>New rent plan</Button></Link>
+            </div>
           ) : null
         }
       />
+      <Modal open={genOpen} onClose={() => setGenOpen(false)} title="Generate monthly dues">
+        <div className="grid gap-4">
+          <p className="text-sm text-ink-600">
+            Creates one rent due from every active rent plan for the chosen month. Plans that already have a due for that month are skipped.
+          </p>
+          <Field label="Billing month" required>
+            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+          </Field>
+          {currentPropertyId ? (
+            <Field label="For">
+              <Select value={scope} onChange={(e) => setScope(e.target.value)}>
+                <option value="property">Selected property only</option>
+                <option value="all">All properties</option>
+              </Select>
+            </Field>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setGenOpen(false)}>Cancel</Button>
+            <Button loading={generate.isPending} disabled={!month} onClick={() => generate.mutate()}>Generate dues</Button>
+          </div>
+        </div>
+      </Modal>
       <div className="mb-4">
         <Select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All dues</option>
@@ -274,10 +326,10 @@ export function RentPage() {
       <DataTable
         loading={dues.isLoading}
         error={dues.error}
-        rows={dues.data || []}
+        rows={visibleDues}
         rowTo={(d) => `/rent/${d._id}`}
         emptyTitle="No rent dues"
-        emptyDescription="Create a rent plan, then generate a monthly due."
+        emptyDescription="Create rent plans for your tenants, then use Generate monthly dues."
         columns={[
           { key: 'tenant', header: 'Tenant', render: (d) => nameOf(d.tenant) },
           { key: 'billingMonth', header: 'Month' },
@@ -289,7 +341,7 @@ export function RentPage() {
       />
       <h2 className="mt-10 font-display text-2xl">Rent plans</h2>
       <DataTable
-        rows={plans.data || []}
+        rows={visiblePlans}
         emptyTitle="No rent plans"
         columns={[
           { key: 'tenant', header: 'Tenant', render: (p) => nameOf(p.tenant) },
@@ -306,7 +358,15 @@ export function RentPlanCreatePage() {
   const navigate = useNavigate()
   const tenants = useQuery({ queryKey: ['tenants', { status: 'ACTIVE' }], queryFn: () => tenantApi.list({ status: 'ACTIVE' }) })
   const allocations = useQuery({ queryKey: ['allocations'], queryFn: () => allocationApi.list() })
-  const [form, setForm] = useState({ tenantId: '', allocationId: '', monthlyRent: '', dueDay: 5, startDate: toInputDate(new Date()), notes: '' })
+  const [params] = useSearchParams()
+  const [form, setForm] = useState({
+    tenantId: params.get('tenantId') || '',
+    allocationId: params.get('allocationId') || '',
+    monthlyRent: '',
+    dueDay: 5,
+    startDate: toInputDate(new Date()),
+    notes: '',
+  })
   const [error, setError] = useState('')
   const tenantAllocations = asArray(allocations.data).filter(
     (a) => a.status === 'ACTIVE' && (a.tenant?._id || a.tenant) === form.tenantId

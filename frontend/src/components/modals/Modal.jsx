@@ -36,22 +36,22 @@ export function Modal({ open, title, children, onClose, footer, wide }) {
       <div
         className={cx(
           'relative z-10 max-h-[90vh] w-full overflow-y-auto',
-          'border border-line bg-card',
+          'border border-line bg-paper/85 glass-strong',
           'rounded-t-[20px] shadow-[0_20px_60px_rgba(11,16,32,0.18)]',
-          'sm:rounded-[18px]',
+          'sm:rounded-[22px]',
           wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'
         )}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-card/95 px-6 py-5 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-paper/70 px-6 py-5 backdrop-blur">
           <div className="min-w-0">
-            <h2 className="font-display text-2xl font-semibold tracking-[-0.025em] text-navy-900">
+            <h2 className="font-display text-2xl font-semibold tracking-[-0.025em] text-ink-950">
               {title}
             </h2>
           </div>
 
           <button
             type="button"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-ink-50 text-lg leading-none text-ink-400 transition-all hover:border-ink-200 hover:bg-white hover:text-ink-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/10"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-ink-50 text-lg leading-none text-ink-400 transition-all hover:border-ink-200 hover:bg-card hover:text-ink-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/10"
             onClick={onClose}
             aria-label="Close"
           >

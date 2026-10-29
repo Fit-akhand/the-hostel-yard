@@ -68,3 +68,14 @@ export const bedListQuerySchema = z.object({
     ])
     .optional(),
 })
+export const propertyBedsQuerySchema = z.object({
+  propertyId: z.string().min(1, 'Property is required'),
+  status: z
+    .enum([
+      'AVAILABLE',
+      'OCCUPIED',
+      'MAINTENANCE',
+      'INACTIVE',
+    ])
+    .optional(),
+})

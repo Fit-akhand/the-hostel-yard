@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend-local-db",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["PORT=5001", "MONGODB_URI=mongodb://127.0.0.1:27017/hostel_yard_local", "npm", "run", "dev", "--prefix", "backend"],
+      "port": 5001
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend", "--", "--config", "vite.local.config.js"],
+      "port": 5173
+    }
+  ]
+}

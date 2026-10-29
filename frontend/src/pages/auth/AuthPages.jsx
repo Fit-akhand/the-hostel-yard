@@ -58,7 +58,7 @@ export function LoginPage() {
   return (
     <Card className="p-8">
       <p className="text-xs uppercase tracking-[0.2em] text-brand">Sign in</p>
-      <h1 className="mt-2 font-display text-3xl text-navy-900">Welcome back</h1>
+      <h1 className="mt-2 font-display text-3xl text-ink-950">Welcome back</h1>
       <p className="mt-1 text-sm text-ink-600">Use your email or phone and password.</p>
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <Field label="Email or phone" htmlFor="identifier" required error={errors.identifier}>
@@ -115,7 +115,7 @@ export function SetupOwnerPage() {
   return (
     <Card className="p-8">
       <p className="text-xs uppercase tracking-[0.2em] text-brand">Onboarding</p>
-      <h1 className="mt-2 font-display text-3xl text-navy-900">Set up the business owner</h1>
+      <h1 className="mt-2 font-display text-3xl text-ink-950">Set up the business owner</h1>
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <Field label="Full name" required error={errors.name}>
           <Input value={form.name} onChange={(e) => set('name', e.target.value)} />
@@ -178,7 +178,7 @@ export function VerifyOwnerPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Verify your number</h1>
+      <h1 className="font-display text-3xl text-ink-950">Verify your number</h1>
       <p className="mt-2 text-sm text-ink-600">Enter the 6-digit OTP. In development it is printed in the backend terminal.</p>
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <Field label="Verification ID" required>
@@ -221,7 +221,7 @@ export function ForgotPasswordPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Reset password</h1>
+      <h1 className="font-display text-3xl text-ink-950">Reset password</h1>
       {done ? (
         <p className="mt-4 text-sm text-ink-600">
           If an account exists with this email, a password reset link has been sent.
@@ -275,7 +275,7 @@ export function ResetPasswordPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Choose a new password</h1>
+      <h1 className="font-display text-3xl text-ink-950">Choose a new password</h1>
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <PasswordField id="new-password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" label="New password" />
         <div>
@@ -319,7 +319,7 @@ export function AcceptTenantPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Activate tenant account</h1>
+      <h1 className="font-display text-3xl text-ink-950">Activate tenant account</h1>
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <PasswordField id="tenant-password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
         {error ? <p className="text-sm text-danger">{error}</p> : null}
@@ -361,7 +361,7 @@ export function ActivateManagerPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Activate manager account</h1>
+      <h1 className="font-display text-3xl text-ink-950">Activate manager account</h1>
       {info ? <p className="mt-2 text-sm text-ink-600">{info.manager?.name || info.managerName} · {info.property?.name}</p> : null}
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <PasswordField id="mgr-pass" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
@@ -404,7 +404,7 @@ export function ActivateStaffPage() {
 
   return (
     <Card className="p-8">
-      <h1 className="font-display text-3xl text-navy-900">Activate staff account</h1>
+      <h1 className="font-display text-3xl text-ink-950">Activate staff account</h1>
       {info?.staff ? <p className="mt-2 text-sm text-ink-600">{info.staff.name} · {info.staff.designation}</p> : null}
       <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
         <PasswordField id="staff-pass" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />

@@ -24,14 +24,14 @@ export class ErrorBoundary extends Component {
     if (!this.state.error) return this.props.children
 
     return (
-      <div className="min-h-screen bg-[#F8F9FA] px-4 py-8 sm:px-6">
+      <div className="min-h-screen bg-transparent px-4 py-8 sm:px-6">
         <div className="flex min-h-[70vh] items-center justify-center">
-          <Card className="w-full max-w-lg border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+          <Card className="w-full max-w-lg border border-line bg-card p-8 text-center shadow-sm sm:p-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className="h-8 w-8 text-[#E92323]"
+                className="h-8 w-8 text-brand"
                 aria-hidden="true"
               >
                 <path
@@ -55,11 +55,11 @@ export class ErrorBoundary extends Component {
               </svg>
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold tracking-tight text-[#171717] sm:text-3xl">
+            <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink-950 sm:text-3xl">
               Something went wrong
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-gray-600">
+            <p className="mt-3 text-sm leading-6 text-ink-600">
               This screen failed to render. Your session is still active.
               Try again or return to the dashboard.
             </p>
@@ -73,7 +73,7 @@ export class ErrorBoundary extends Component {
               </Button>
 
               <Button
-                className="bg-[#E92323] text-white hover:bg-[#C91C1C]"
+                className="bg-brand text-white hover:bg-brand-dark"
                 onClick={this.reset}
               >
                 Try again

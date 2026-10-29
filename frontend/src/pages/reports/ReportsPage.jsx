@@ -1,3 +1,4 @@
+import { useChartColors } from '../../utils/chartColors'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -19,6 +20,7 @@ const TABS = [
 ]
 
 export function ReportsPage() {
+  const chart = useChartColors()
   const current = usePropertyStore((s) => s.currentPropertyId)
   const properties = useQuery({ queryKey: ['properties'], queryFn: propertyApi.list })
   const [tab, setTab] = useState('occupancy')
@@ -34,7 +36,10 @@ export function ReportsPage() {
     queryKey: ['report', tab, params],
     queryFn: () => reportApi[tab](params),
   })
-  const rows = asArray(query.data)
+  const propertyName = new Map(asArray(properties.data).map((p) => [p._id, p.name]))
+  const rows = asArray(query.data).map((r) =>
+    typeof r.property === 'string' && propertyName.has(r.property) ? { ...r, property: propertyName.get(r.property) } : r
+  )
 
   return (
     <div>
@@ -60,12 +65,12 @@ export function ReportsPage() {
         <Card className="mb-6 p-5">
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={rows.map((r) => ({ name: String(r.property).slice(-5), occupancy: r.occupancyPercentage }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e4dfd6" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="occupancy" fill="#121a2f" />
+              <BarChart data={rows.map((r) => ({ name: String(r.property), occupancy: r.occupancyPercentage }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.line} />
+                <XAxis dataKey="name" tick={{ fill: chart.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: chart.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip {...tooltipProps} />
+                <Bar dataKey="occupancy" fill={chart.brand} radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -75,13 +80,13 @@ export function ReportsPage() {
         <Card className="mb-6 p-5">
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={rows.map((r) => ({ name: String(r.property).slice(-5), due: r.totalDue, paid: r.totalPaid }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e4dfd6" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(v) => formatINR(v)} />
-                <Bar dataKey="due" fill="#121a2f" />
-                <Bar dataKey="paid" fill="#b08d57" />
+              <BarChart data={rows.map((r) => ({ name: String(r.property), due: r.totalDue, paid: r.totalPaid }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.line} />
+                <XAxis dataKey="name" tick={{ fill: chart.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: chart.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip {...tooltipProps} formatter={(v) => formatINR(v)} />
+                <Bar dataKey="due" fill={chart.brand} radius={[8, 8, 0, 0]} />
+                <Bar dataKey="paid" fill={chart.success} radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -92,7 +97,7 @@ export function ReportsPage() {
           <thead className="bg-ink-50 text-xs uppercase tracking-[0.12em] text-ink-400">
             <tr>
               {Object.keys(rows[0] || { result: 'empty' }).map((k) => (
-                <th key={k} className="px-4 py-3">{k}</th>
+                <th key={k} className="whitespace-nowrap px-4 py-3">{humanize(k)}</th>
               ))}
             </tr>
           </thead>
@@ -110,6 +115,21 @@ export function ReportsPage() {
       </Card>
     </div>
   )
+}
+
+const tooltipProps = {
+  contentStyle: {
+    background: 'var(--color-paper)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid var(--color-line)',
+    borderRadius: 12,
+    color: 'var(--color-ink-950)',
+  },
+  
+}
+
+function humanize(key) {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
 }
 
 function flatten(row) {

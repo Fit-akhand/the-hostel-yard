@@ -3,6 +3,7 @@ import express from 'express'
 import {
   createBed,
   getBedsByRoom,
+  getBedsByProperty,
   getBedById,
   updateBed,
   deactivateBed,
@@ -22,9 +23,17 @@ import {
   createBedSchema,
   updateBedSchema,
   bedListQuerySchema,
+  propertyBedsQuerySchema,
 } from '../validators/bedValidator.js'
 
 const router = express.Router()
+
+router.get(
+  '/',
+  protect,
+  validateQuery(propertyBedsQuerySchema),
+  getBedsByProperty
+)
 
 // -----------------------------------------------
 // GET BEDS OF ROOM

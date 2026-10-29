@@ -28,7 +28,7 @@ export function Button({
     secondary: [
       'border border-line bg-card text-ink-950',
       'shadow-[0_1px_2px_rgba(18,26,47,.035)]',
-      'hover:border-ink-200 hover:bg-white',
+      'hover:border-ink-200 hover:bg-card',
       'hover:shadow-[0_4px_12px_rgba(18,26,47,.06)]',
       'active:translate-y-px',
     ].join(' '),
@@ -95,7 +95,7 @@ const controlBase = [
   'shadow-[0_1px_2px_rgba(18,26,47,.025)]',
   transition,
   'hover:border-ink-200',
-  'focus:border-brand focus:bg-white',
+  'focus:border-brand focus:bg-card',
   'focus:outline-none focus:ring-4 focus:ring-brand/10',
   'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400',
 ].join(' ')
@@ -310,7 +310,7 @@ export function PageHeader({
           </div>
         ) : null}
 
-        <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-navy-900 sm:text-[34px]">
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-ink-950 sm:text-[34px]">
           {title}
         </h1>
 
@@ -351,7 +351,7 @@ export function StatCard({ label, value, hint }) {
         />
       </div>
 
-      <p className="mt-3 font-display text-[30px] font-semibold leading-none tracking-[-0.035em] text-navy-900 tabular">
+      <p className="mt-3 font-display text-[30px] font-semibold leading-none tracking-[-0.035em] text-ink-950 tabular">
         {value}
       </p>
 
@@ -383,7 +383,7 @@ export function EmptyState({
         />
       </div>
 
-      <p className="font-display text-2xl font-semibold tracking-[-0.025em] text-navy-900">
+      <p className="font-display text-2xl font-semibold tracking-[-0.025em] text-ink-950">
         {title}
       </p>
 
@@ -415,7 +415,7 @@ export function ErrorState({
         </span>
       </div>
 
-      <p className="font-display text-2xl font-semibold tracking-[-0.025em] text-navy-900">
+      <p className="font-display text-2xl font-semibold tracking-[-0.025em] text-ink-950">
         {title}
       </p>
 
@@ -505,7 +505,7 @@ export function Tabs({
               transition,
               focusRing,
               active
-                ? 'text-navy-900'
+                ? 'text-ink-950'
                 : 'text-ink-600 hover:text-ink-950'
             )}
             onClick={() => onChange(tab.id)}

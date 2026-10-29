@@ -459,3 +459,64 @@ export const deactivateBed = async ({
 
   return bed
 }
+// --------------------------------------------------
+// GET BEDS OF A PROPERTY (all rooms)
+// --------------------------------------------------
+
+export const getBedsByProperty = async ({
+  user,
+  propertyId,
+  status,
+}) => {
+  if (!user.organization) {
+    const error = new Error(
+      'User is not associated with an organization.'
+    )
+
+    error.statusCode = 400
+    throw error
+  }
+
+  if (user.role === 'PROPERTY_MANAGER') {
+    const assignment =
+      await PropertyManagerAssignment.findOne({
+        manager: user._id,
+        property: propertyId,
+        status: 'ACTIVE',
+      })
+
+    if (
+      !assignment ||
+      !assignment.permissions.includes(
+        PERMISSIONS.VIEW_ROOMS
+      )
+    ) {
+      const error = new Error(
+        'You are not allowed to view beds of this property.'
+      )
+
+      error.statusCode = 403
+      throw error
+    }
+  } else if (user.role !== 'BUSINESS_OWNER') {
+    const error = new Error(
+      'You are not authorized to access beds.'
+    )
+
+    error.statusCode = 403
+    throw error
+  }
+
+  const filter = {
+    organization: user.organization,
+    property: propertyId,
+  }
+
+  if (status) {
+    filter.status = status
+  }
+
+  return Bed.find(filter)
+    .populate('room', 'roomNumber floor type capacity status')
+    .sort({ bedNumber: 1 })
+}

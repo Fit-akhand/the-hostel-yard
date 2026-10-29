@@ -67,3 +67,13 @@ export const generateRentDueSchema = z.object({
       'Billing month must be in YYYY-MM format'
     ),
 })
+
+export const generateMonthlyDuesSchema = z.object({
+  billingMonth: z
+    .string()
+    .regex(
+      /^\d{4}-(0[1-9]|1[0-2])$/,
+      'Billing month must be in YYYY-MM format'
+    ),
+  propertyId: z.string().optional(),
+})

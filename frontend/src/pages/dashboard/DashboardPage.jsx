@@ -1,3 +1,4 @@
+import { useChartColors } from '../../utils/chartColors'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
@@ -15,6 +16,7 @@ import {
 
 import {
   dashboardApi,
+  propertyApi,
   reportApi,
   paymentApi,
   complaintApi,
@@ -210,12 +212,12 @@ function Icon({
 
 function IconBox({ icon, tone = 'red' }) {
   const tones = {
-    red: 'bg-red-50 text-brand',
+    red: 'bg-brand-soft text-brand',
     green: 'bg-emerald-50 text-emerald-600',
     blue: 'bg-blue-50 text-blue-600',
     purple: 'bg-violet-50 text-violet-600',
     orange: 'bg-orange-50 text-orange-600',
-    navy: 'bg-slate-100 text-navy-900',
+    navy: 'bg-slate-100 text-ink-950',
   }
 
   return (
@@ -247,7 +249,7 @@ function PremiumStat({
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${
               trendPositive
                 ? 'bg-emerald-50 text-emerald-700'
-                : 'bg-red-50 text-red-600'
+                : 'bg-brand-soft text-red-600'
             }`}
           >
             <Icon name="arrowUp" size={12} />
@@ -258,7 +260,7 @@ function PremiumStat({
 
       <p className="mt-4 text-xs font-medium text-ink-500">{label}</p>
 
-      <p className="mt-1 font-display text-[28px] font-semibold tracking-tight text-navy-900 tabular">
+      <p className="mt-1 font-display text-[28px] font-semibold tracking-tight text-ink-950 tabular">
         {value}
       </p>
 
@@ -287,7 +289,7 @@ function SectionHeader({ title, description, to }) {
   return (
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h2 className="font-display text-[19px] font-semibold text-navy-900">
+        <h2 className="font-display text-[19px] font-semibold text-ink-950">
           {title}
         </h2>
 
@@ -318,6 +320,7 @@ function SectionHeader({ title, description, to }) {
 /* -------------------------------------------------------------------------- */
 
 export function DashboardPage() {
+  const chart = useChartColors()
   const user = useAuthStore((s) => s.user)
 
   const propertyId =
@@ -327,6 +330,12 @@ export function DashboardPage() {
     queryKey: ['dashboard', 'overview', propertyId || ''],
     queryFn: () =>
       dashboardApi.overview(propertyId ? { propertyId } : {}),
+  })
+
+  const propertyList = useQuery({
+    queryKey: ['properties'],
+    queryFn: propertyApi.list,
+    staleTime: 60_000,
   })
 
   const occupancyReport = useQuery({
@@ -465,11 +474,18 @@ export function DashboardPage() {
     },
   ]
 
-  const propertyPerf = asArray(occupancyReport.data).map((row) => ({
-    name: String(row.property).slice(-6),
-    occupancy: row.occupancyPercentage || 0,
-    occupied: row.occupiedBeds || 0,
-  }))
+  const propertyNames = new Map(
+    asArray(propertyList.data).map((p) => [p._id, p.name])
+  )
+
+  const propertyPerf = asArray(occupancyReport.data)
+    .map((row) => ({
+      name: propertyNames.get(row.property) || 'Property',
+      occupancy: row.occupancyPercentage || 0,
+      occupied: row.occupiedBeds || 0,
+      total: row.totalBeds || 0,
+    }))
+    .sort((a, b) => b.occupancy - a.occupancy)
 
   /* ---------------------------------------------------------------------- */
   /*                              GREETING                                  */
@@ -644,7 +660,9 @@ export function DashboardPage() {
                   <Tooltip
                     contentStyle={{
                       borderRadius: 12,
-                      border: '1px solid #E4DFD6',
+                      border: '1px solid var(--color-line)',
+                      background: 'var(--color-paper)',
+                      color: 'var(--color-ink-950)',
                       boxShadow:
                         '0 8px 24px rgba(18,26,47,.08)',
                     }}
@@ -654,7 +672,7 @@ export function DashboardPage() {
 
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <p className="font-display text-3xl font-semibold text-navy-900">
+                  <p className="font-display text-3xl font-semibold text-ink-950">
                     {occupancyLabel(occ?.occupancyPercentage)}
                   </p>
                   <p className="mt-0.5 text-xs text-ink-400">
@@ -670,12 +688,12 @@ export function DashboardPage() {
           )}
 
           <div className="grid grid-cols-2 gap-3 border-t border-line pt-4">
-            <div className="rounded-xl bg-red-50 p-3">
+            <div className="rounded-xl bg-brand-soft p-3">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-brand" />
                 <span className="text-xs text-ink-600">Occupied</span>
               </div>
-              <p className="mt-1 text-lg font-semibold text-navy-900">
+              <p className="mt-1 text-lg font-semibold text-ink-950">
                 {occ?.occupiedBeds ?? 0}
               </p>
             </div>
@@ -685,7 +703,7 @@ export function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-ink-300" />
                 <span className="text-xs text-ink-600">Available</span>
               </div>
-              <p className="mt-1 text-lg font-semibold text-navy-900">
+              <p className="mt-1 text-lg font-semibold text-ink-950">
                 {occ?.availableBeds ?? 0}
               </p>
             </div>
@@ -715,7 +733,7 @@ export function DashboardPage() {
                 >
                   <CartesianGrid
                     vertical={false}
-                    stroke="#ECE8E1"
+                    stroke={chart.line}
                     strokeDasharray="4 4"
                   />
 
@@ -724,7 +742,7 @@ export function DashboardPage() {
                     axisLine={false}
                     tickLine={false}
                     tick={{
-                      fill: '#8B93A3',
+                      fill: chart.text,
                       fontSize: 11,
                     }}
                   />
@@ -733,7 +751,7 @@ export function DashboardPage() {
                     axisLine={false}
                     tickLine={false}
                     tick={{
-                      fill: '#8B93A3',
+                      fill: chart.text,
                       fontSize: 11,
                     }}
                     tickFormatter={(value) =>
@@ -748,7 +766,9 @@ export function DashboardPage() {
                     formatter={(value) => formatINR(value)}
                     contentStyle={{
                       borderRadius: 12,
-                      border: '1px solid #E4DFD6',
+                      border: '1px solid var(--color-line)',
+                      background: 'var(--color-paper)',
+                      color: 'var(--color-ink-950)',
                       boxShadow:
                         '0 8px 24px rgba(18,26,47,.08)',
                     }}
@@ -805,7 +825,7 @@ export function DashboardPage() {
               >
                 <CartesianGrid
                   vertical={false}
-                  stroke="#ECE8E1"
+                  stroke={chart.line}
                   strokeDasharray="4 4"
                 />
 
@@ -814,7 +834,7 @@ export function DashboardPage() {
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fill: '#8B93A3',
+                    fill: chart.text,
                     fontSize: 11,
                   }}
                 />
@@ -823,7 +843,7 @@ export function DashboardPage() {
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fill: '#8B93A3',
+                    fill: chart.text,
                     fontSize: 11,
                   }}
                   tickFormatter={(value) =>
@@ -837,7 +857,9 @@ export function DashboardPage() {
                   formatter={(value) => formatINR(value)}
                   contentStyle={{
                     borderRadius: 12,
-                    border: '1px solid #E4DFD6',
+                    border: '1px solid var(--color-line)',
+                      background: 'var(--color-paper)',
+                      color: 'var(--color-ink-950)',
                     boxShadow:
                       '0 8px 24px rgba(18,26,47,.08)',
                   }}
@@ -868,7 +890,7 @@ export function DashboardPage() {
           />
 
           {propertyPerf.length ? (
-            <div className="h-72">
+            <div style={{ height: Math.max(288, propertyPerf.length * 34) }}>
               <ResponsiveContainer>
                 <BarChart
                   data={propertyPerf}
@@ -882,7 +904,7 @@ export function DashboardPage() {
                 >
                   <CartesianGrid
                     horizontal={false}
-                    stroke="#ECE8E1"
+                    stroke={chart.line}
                     strokeDasharray="4 4"
                   />
 
@@ -892,7 +914,7 @@ export function DashboardPage() {
                     axisLine={false}
                     tickLine={false}
                     tick={{
-                      fill: '#8B93A3',
+                      fill: chart.text,
                       fontSize: 11,
                     }}
                     tickFormatter={(value) => `${value}%`}
@@ -901,20 +923,23 @@ export function DashboardPage() {
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={70}
+                    width={150}
                     axisLine={false}
                     tickLine={false}
+                    tickFormatter={(v) => (String(v).length > 22 ? `${String(v).slice(0, 21)}…` : v)}
                     tick={{
-                      fill: '#5B6475',
+                      fill: chart.text,
                       fontSize: 11,
                     }}
                   />
 
                   <Tooltip
-                    formatter={(value) => `${value}%`}
+                    formatter={(value, _name, item) => [`${value}% (${item.payload.occupied}/${item.payload.total} beds)`, 'Occupancy']}
                     contentStyle={{
                       borderRadius: 12,
-                      border: '1px solid #E4DFD6',
+                      border: '1px solid var(--color-line)',
+                      background: 'var(--color-paper)',
+                      color: 'var(--color-ink-950)',
                       boxShadow:
                         '0 8px 24px rgba(18,26,47,.08)',
                     }}
@@ -1116,12 +1141,12 @@ export function DashboardPage() {
       <Card className="overflow-hidden border-brand/15 bg-gradient-to-r from-brand-soft/70 via-card to-card">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-card text-brand shadow-sm">
               <Icon name="alert" size={21} />
             </div>
 
             <div>
-              <p className="font-semibold text-navy-900">
+              <p className="font-semibold text-ink-950">
                 Dashboard summary
               </p>
 
@@ -1166,7 +1191,7 @@ function Widget({
           <IconBox icon={icon} tone={tone} />
 
           <div className="min-w-0">
-            <h2 className="truncate font-display text-[18px] font-semibold text-navy-900">
+            <h2 className="truncate font-display text-[18px] font-semibold text-ink-950">
               {title}
             </h2>
 

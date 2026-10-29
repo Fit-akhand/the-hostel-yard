@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   allocationApi,
@@ -91,8 +91,9 @@ export function TenantFormPage({ mode }) {
     queryFn: () => tenantApi.get(tenantId),
     enabled: mode === 'edit',
   })
+  const currentPropertyId = usePropertyStore((s) => s.currentPropertyId)
   const [form, setForm] = useState({
-    propertyId: '',
+    propertyId: currentPropertyId || '',
     name: '',
     phone: '',
     email: '',
@@ -142,7 +143,12 @@ export function TenantFormPage({ mode }) {
       return mode === 'edit' ? tenantApi.update(tenantId, body) : tenantApi.create(body)
     },
     onSuccess: (tenant) => {
-      toast.success(mode === 'edit' ? 'Tenant updated successfully.' : 'Tenant created successfully.')
+      if (mode === 'create') {
+        toast.success('Tenant created. Now allocate a bed.')
+        navigate(`/allocations/new?tenantId=${tenant._id}&propertyId=${form.propertyId}`)
+        return
+      }
+      toast.success('Tenant updated successfully.')
       navigate(`/tenants/${tenant._id || tenantId}`)
     },
     onError: (err) => {
@@ -501,31 +507,58 @@ export function AllocationListPage() {
 export function AllocationCreatePage() {
   const navigate = useNavigate()
   const properties = useQuery({ queryKey: ['properties'], queryFn: propertyApi.list })
-  const [propertyId, setPropertyId] = useState('')
+  const [params] = useSearchParams()
+  const currentPropertyId = usePropertyStore((s) => s.currentPropertyId)
+  const user = useAuthStore((s) => s.user)
+  const [propertyId, setPropertyId] = useState(params.get('propertyId') || currentPropertyId || '')
   const [roomId, setRoomId] = useState('')
   const [bedId, setBedId] = useState('')
-  const [tenantId, setTenantId] = useState('')
+  const [tenantId, setTenantId] = useState(params.get('tenantId') || '')
   const [startDate, setStartDate] = useState(toInputDate(new Date()))
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
-  const rooms = useQuery({
-    queryKey: ['rooms', { propertyId }],
-    queryFn: () => roomApi.list({ propertyId, status: 'ACTIVE' }),
+  // Only beds that are actually free, grouped by room.
+  const freeBeds = useQuery({
+    queryKey: ['beds', 'available', propertyId],
+    queryFn: () => bedApi.listByProperty({ propertyId, status: 'AVAILABLE' }),
     enabled: Boolean(propertyId),
   })
-  const beds = useQuery({
-    queryKey: ['beds', roomId, 'AVAILABLE'],
-    queryFn: () => bedApi.listByRoom(roomId, { status: 'AVAILABLE' }),
-    enabled: Boolean(roomId),
+  const activeAllocations = useQuery({
+    queryKey: ['allocations', { propertyId, status: 'ACTIVE' }],
+    queryFn: () => allocationApi.list({ propertyId, status: 'ACTIVE' }),
+    enabled: Boolean(propertyId),
   })
   const tenants = useQuery({
     queryKey: ['tenants', { propertyId, status: 'ACTIVE' }],
     queryFn: () => tenantApi.list({ propertyId, status: 'ACTIVE' }),
     enabled: Boolean(propertyId),
   })
+  const bedsByRoom = new Map()
+  for (const b of asArray(freeBeds.data)) {
+    const rid = b.room?._id || b.room
+    if (!bedsByRoom.has(rid)) bedsByRoom.set(rid, { room: b.room, beds: [] })
+    bedsByRoom.get(rid).beds.push(b)
+  }
+  const roomOptions = [...bedsByRoom.values()].sort((a, b) =>
+    String(a.room?.roomNumber).localeCompare(String(b.room?.roomNumber), undefined, { numeric: true })
+  )
+  const bedOptions = bedsByRoom.get(roomId)?.beds || []
+  const allocatedIds = new Set(
+    asArray(activeAllocations.data)
+      .filter((a) => a.status === 'ACTIVE')
+      .map((a) => a.tenant?._id || a.tenant)
+  )
+  const unallocatedTenants = asArray(tenants.data).filter(
+    (t) => !allocatedIds.has(t._id) || t._id === tenantId
+  )
   const mutation = useMutation({
     mutationFn: () => allocationApi.create({ tenantId, bedId, startDate, notes: notes || undefined }),
     onSuccess: (a) => {
+      if (can(user, PERMISSIONS.ADD_DUES)) {
+        toast.success('Bed allocated. Set up the monthly rent next.')
+        navigate(`/rent/plans/new?tenantId=${tenantId}&allocationId=${a._id}`)
+        return
+      }
       toast.success('Bed allocated successfully.')
       navigate(`/allocations/${a._id}`)
     },
@@ -551,18 +584,20 @@ export function AllocationCreatePage() {
               ))}
             </Select>
           </Field>
-          <Field label="Room" required>
+          <Field label={`Room (${roomOptions.length} with free beds)`} required>
             <Select value={roomId} onChange={(e) => { setRoomId(e.target.value); setBedId('') }} disabled={!propertyId}>
               <option value="">Select</option>
-              {asArray(rooms.data).map((r) => (
-                <option key={r._id} value={r._id}>{r.roomNumber}</option>
+              {roomOptions.map(({ room, beds }) => (
+                <option key={room?._id || room} value={room?._id || room}>
+                  Room {room?.roomNumber} · {beds.length} free {beds.length === 1 ? 'bed' : 'beds'}
+                </option>
               ))}
             </Select>
           </Field>
           <Field label="Available bed" required>
             <Select value={bedId} onChange={(e) => setBedId(e.target.value)} disabled={!roomId}>
               <option value="">Select</option>
-              {asArray(beds.data).map((b) => (
+              {bedOptions.map((b) => (
                 <option key={b._id} value={b._id}>{b.bedNumber}</option>
               ))}
             </Select>
@@ -570,7 +605,7 @@ export function AllocationCreatePage() {
           <Field label="Tenant" required>
             <Select value={tenantId} onChange={(e) => setTenantId(e.target.value)} disabled={!propertyId}>
               <option value="">Select</option>
-              {asArray(tenants.data).map((t) => (
+              {unallocatedTenants.map((t) => (
                 <option key={t._id} value={t._id}>{t.name} · {t.phone}</option>
               ))}
             </Select>

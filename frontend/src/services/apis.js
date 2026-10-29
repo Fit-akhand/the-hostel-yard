@@ -32,6 +32,7 @@ export const roomApi = {
 }
 
 export const bedApi = {
+  listByProperty: (params) => getList('/beds', params, 'beds'),
   listByRoom: (roomId, params) => getList(`/beds/room/${roomId}`, params, 'beds'),
   get: (id) => get(`/beds/${id}`, undefined, 'bed'),
   create: (roomId, body) => mutate('post', `/beds/room/${roomId}`, body, 'bed'),
@@ -86,6 +87,7 @@ export const rentApi = {
   plans: (params) => getList('/rent/plans', params, 'rentPlans'),
   createPlan: (body) => mutate('post', '/rent/plans', body, 'rentPlan'),
   generateDue: (planId, body) => mutate('post', `/rent/plans/${planId}/due`, body, 'rentDue'),
+  generateMonthly: (body) => mutate('post', '/rent/dues/generate', body),
   dues: (params) => getList('/rent/dues', params, 'dues'),
   paymentInfo: (dueId) => get(`/rent/dues/${dueId}/payment-info`, undefined, 'paymentInfo'),
 }

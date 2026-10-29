@@ -1,3 +1,7 @@
+import { LoginVisual } from '../components/auth/LoginVisual'
+import { GlobalSearch } from '../components/ui/GlobalSearch'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { useThemeStore } from '../store/themeStore'
 import {
   Link,
   NavLink,
@@ -55,6 +59,17 @@ import { ErrorBoundary } from '../app/ErrorBoundary'
    BRAND
 ========================================================= */
 
+function FullLogo({ className }) {
+  const theme = useThemeStore((s) => s.theme)
+  return (
+    <img
+      src={theme === 'dark' ? '/logo-full-light.png' : '/logo-full.png'}
+      alt="The Hostel Yard"
+      className={className}
+    />
+  )
+}
+
 function Brand({ compact = false, dark = false }) {
   return (
     <Link
@@ -69,14 +84,14 @@ function Brand({ compact = false, dark = false }) {
         className={[
           'flex h-10 w-10 shrink-0 items-center justify-center',
           'overflow-hidden rounded-xl',
-          'bg-white ring-1 ring-black/[0.06]',
+          'bg-card ring-1 ring-black/[0.06]',
           'shadow-[0_2px_10px_rgba(0,0,0,.06)]',
           'transition-transform duration-200',
           'group-hover:scale-[1.03]',
         ].join(' ')}
       >
         <img
-          src="/logo.png"
+          src="/logo-mark.png"
           alt="The Hostel Yard"
           className="h-full w-full object-contain p-1.5"
         />
@@ -88,7 +103,7 @@ function Brand({ compact = false, dark = false }) {
             className={[
               'block truncate text-[15px] font-extrabold',
               'uppercase tracking-[0.025em]',
-              dark ? 'text-white' : 'text-gray-950',
+              dark ? 'text-white' : 'text-ink-950',
             ].join(' ')}
           >
             The Hostel Yard
@@ -98,7 +113,7 @@ function Brand({ compact = false, dark = false }) {
             className={[
               'mt-0.5 block text-[10px] font-medium',
               'uppercase tracking-[0.18em]',
-              dark ? 'text-white/40' : 'text-gray-400',
+              dark ? 'text-white/40' : 'text-ink-400',
             ].join(' ')}
           >
             Property operations
@@ -121,13 +136,13 @@ function navClass(active) {
     'transition-all duration-150 ease-out',
     active
       ? [
-          'bg-[#E92323] text-white',
+          'bg-brand text-white',
           'shadow-[0_6px_18px_rgba(233,35,35,.16)]',
         ].join(' ')
       : [
-          'text-gray-500',
-          'hover:bg-gray-100/80',
-          'hover:text-gray-950',
+          'text-ink-600',
+          'hover:bg-ink-50',
+          'hover:text-ink-950',
         ].join(' '),
   ].join(' ')
 }
@@ -188,11 +203,11 @@ function NotificationButton({ to, count }) {
       to={to}
       className={[
         'relative flex h-10 w-10 items-center justify-center',
-        'rounded-xl border border-gray-200 bg-white',
-        'text-gray-500',
+        'rounded-xl border border-line bg-card',
+        'text-ink-600',
         'shadow-[0_1px_2px_rgba(0,0,0,.02)]',
         'transition-all duration-150',
-        'hover:border-gray-300 hover:bg-gray-50 hover:text-gray-950',
+        'hover:border-line hover:bg-ink-50 hover:text-ink-950',
       ].join(' ')}
       aria-label="Notifications"
     >
@@ -204,7 +219,7 @@ function NotificationButton({ to, count }) {
             'absolute -right-1 -top-1',
             'flex min-h-5 min-w-5 items-center justify-center',
             'rounded-full border-2 border-white',
-            'bg-[#E92323] px-1',
+            'bg-brand px-1',
             'text-[10px] font-bold leading-none text-white',
           ].join(' ')}
         >
@@ -227,7 +242,7 @@ function UserAvatar({ user, dark = false }) {
         'rounded-full text-xs font-bold',
         dark
           ? 'bg-gray-950 text-white'
-          : 'bg-red-50 text-[#E92323]',
+          : 'bg-brand-soft text-brand',
       ].join(' ')}
     >
       {initials(user?.name)}
@@ -252,13 +267,13 @@ function PropertySelector({
       <div className="mb-2 flex items-center justify-between">
         <label
           htmlFor="current-property"
-          className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400"
+          className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400"
         >
           Workspace
         </label>
 
         {properties.length > 1 ? (
-          <span className="text-[10px] font-medium text-gray-400">
+          <span className="text-[10px] font-medium text-ink-400">
             {properties.length} properties
           </span>
         ) : null}
@@ -268,7 +283,7 @@ function PropertySelector({
         <Building2
           size={15}
           strokeWidth={1.8}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400"
         />
 
         <select
@@ -279,16 +294,16 @@ function PropertySelector({
           aria-label="Current property"
           className={[
             'h-11 w-full appearance-none',
-            'rounded-xl border border-gray-200',
-            'bg-gray-50/80',
+            'rounded-xl border border-line',
+            'bg-ink-50',
             'pl-10 pr-9',
-            'text-sm font-semibold text-gray-900',
+            'text-sm font-semibold text-ink-950',
             'outline-none',
             'transition-all duration-150',
-            'hover:border-gray-300 hover:bg-white',
-            'focus:border-[#E92323]',
-            'focus:bg-white',
-            'focus:ring-4 focus:ring-[#E92323]/10',
+            'hover:border-line hover:bg-card',
+            'focus:border-brand',
+            'focus:bg-card',
+            'focus:ring-4 focus:ring-brand/10',
             'disabled:cursor-not-allowed disabled:opacity-50',
           ].join(' ')}
         >
@@ -307,7 +322,7 @@ function PropertySelector({
         <ChevronDown
           size={15}
           strokeWidth={1.8}
-          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-400"
         />
       </div>
 
@@ -346,14 +361,14 @@ function Sidebar({
   tenant = false,
 }) {
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-card">
       {/* Brand */}
-      <div className="border-b border-gray-100 px-5 py-5">
+      <div className="border-b border-line px-5 py-5">
         <Brand />
       </div>
 
       {!tenant ? (
-        <div className="border-b border-gray-100 pt-4">
+        <div className="border-b border-line pt-4">
           <PropertySelector
             properties={properties}
             currentPropertyId={currentPropertyId}
@@ -365,16 +380,16 @@ function Sidebar({
         </div>
       ) : (
         <div className="px-4 py-5">
-          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+          <div className="rounded-2xl border border-line bg-ink-50 p-4">
             <div className="flex items-center gap-3">
               <UserAvatar user={user} dark />
 
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-950">
+                <p className="truncate text-sm font-semibold text-ink-950">
                   {user?.name}
                 </p>
 
-                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
                   Resident
                 </p>
               </div>
@@ -391,7 +406,7 @@ function Sidebar({
         {!tenant ? (
           groups.map((group) => (
             <div key={group.id} className="mb-5 last:mb-0">
-              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">
                 {group.label}
               </p>
 
@@ -425,7 +440,7 @@ function Sidebar({
           ))
         ) : (
           <>
-            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">
               Resident portal
             </p>
 
@@ -461,17 +476,17 @@ function Sidebar({
       </nav>
 
       {/* User / Sign out */}
-      <div className="border-t border-gray-100 p-4">
+      <div className="border-t border-line p-4">
         {!tenant ? (
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-gray-50 p-2.5">
+          <div className="mb-3 flex items-center gap-3 rounded-xl bg-ink-50 p-2.5">
             <UserAvatar user={user} dark />
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-950">
+              <p className="truncate text-sm font-semibold text-ink-950">
                 {user?.name}
               </p>
 
-              <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+              <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-400">
                 {user?.role?.replaceAll('_', ' ')}
               </p>
             </div>
@@ -482,8 +497,8 @@ function Sidebar({
           variant="ghost"
           className={[
             'w-full justify-start gap-3 rounded-xl',
-            'text-gray-500',
-            'hover:bg-gray-100 hover:text-gray-950',
+            'text-ink-600',
+            'hover:bg-ink-50 hover:text-ink-950',
           ].join(' ')}
           onClick={async () => {
             await logout()
@@ -597,9 +612,9 @@ export function DashboardLayout() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F7F7F8]">
+    <div className="min-h-screen bg-transparent">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-gray-200 bg-white lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line bg-card glass-strong lg:block">
         <Sidebar
           user={user}
           groups={groups}
@@ -634,7 +649,7 @@ export function DashboardLayout() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="relative h-full w-[285px] border-r border-gray-200 bg-white shadow-2xl">
+          <div className="relative h-full w-[285px] border-r border-line bg-card shadow-2xl">
             <Sidebar
               user={user}
               groups={groups}
@@ -664,15 +679,15 @@ export function DashboardLayout() {
 
       <div className="lg:pl-[264px]">
         {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-gray-200/80 bg-white/90 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-line bg-card">
           <div className="flex h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               type="button"
               className={[
                 'flex h-10 w-10 shrink-0 items-center justify-center',
-                'rounded-xl border border-gray-200',
-                'bg-white text-gray-600',
-                'transition hover:bg-gray-50 hover:text-gray-950',
+                'rounded-xl border border-line',
+                'bg-card text-ink-600',
+                'transition hover:bg-ink-50 hover:text-ink-950',
                 'lg:hidden',
               ].join(' ')}
               onClick={() => setOpen(true)}
@@ -682,54 +697,29 @@ export function DashboardLayout() {
             </button>
 
             {/* Search */}
-            <div className="relative hidden min-w-0 flex-1 md:block">
-              <Search
-                size={17}
-                strokeWidth={1.8}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-
-              <input
-                className={[
-                  'h-10 w-full max-w-xl',
-                  'rounded-xl border border-gray-200',
-                  'bg-gray-50/70',
-                  'pl-10 pr-4',
-                  'text-sm text-gray-900',
-                  'outline-none',
-                  'transition-all duration-150',
-                  'placeholder:text-gray-400',
-                  'focus:border-gray-300',
-                  'focus:bg-white',
-                  'focus:ring-4 focus:ring-gray-100',
-                ].join(' ')}
-                placeholder="Search tenants, rooms, payments..."
-                readOnly
-                onFocus={() => navigate('/tenants')}
-                aria-label="Search operations"
-              />
-            </div>
+            <GlobalSearch />
 
             <div className="ml-auto flex items-center gap-3">
+              <ThemeToggle />
               <NotificationButton
                 to="/notifications"
                 count={unreadQuery.data}
               />
 
-              <div className="hidden h-8 w-px bg-gray-200 sm:block" />
+              <div className="hidden h-8 w-px bg-line sm:block" />
 
               <Link
                 to="/profile"
-                className="hidden items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-gray-50 sm:flex"
+                className="hidden items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-ink-50 sm:flex"
               >
                 <UserAvatar user={user} />
 
                 <div className="max-w-[190px] text-left">
-                  <p className="truncate text-sm font-semibold text-gray-950">
+                  <p className="truncate text-sm font-semibold text-ink-950">
                     {user?.name}
                   </p>
 
-                  <p className="truncate text-xs text-gray-400">
+                  <p className="truncate text-xs text-ink-400">
                     {nameOf(
                       selectedProperty,
                       'All properties'
@@ -749,7 +739,7 @@ export function DashboardLayout() {
           >
             <Link
               to="/dashboard"
-              className="font-medium text-gray-400 transition hover:text-gray-700"
+              className="font-medium text-ink-400 transition hover:text-ink-800"
             >
               Home
             </Link>
@@ -766,8 +756,8 @@ export function DashboardLayout() {
                   className={[
                     'capitalize transition',
                     index === crumbs.length - 1
-                      ? 'font-semibold text-gray-700'
-                      : 'text-gray-400 hover:text-gray-700',
+                      ? 'font-semibold text-ink-800'
+                      : 'text-ink-400 hover:text-ink-800',
                   ].join(' ')}
                 >
                   {crumb.label}
@@ -803,9 +793,9 @@ export function TenantLayout() {
   })
 
   return (
-    <div className="min-h-screen bg-[#F7F7F8]">
+    <div className="min-h-screen bg-transparent">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-gray-200 bg-white lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line bg-card glass-strong lg:block">
         <Sidebar
           user={user}
           groups={[]}
@@ -831,7 +821,7 @@ export function TenantLayout() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="relative h-full w-[285px] border-r border-gray-200 bg-white shadow-2xl">
+          <div className="relative h-full w-[285px] border-r border-line bg-card shadow-2xl">
             <Sidebar
               user={user}
               groups={[]}
@@ -852,16 +842,16 @@ export function TenantLayout() {
 
       <div className="lg:pl-[264px]">
         {/* Header */}
-        <header className="sticky top-0 z-20 border-b border-gray-200/80 bg-white/90 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-line bg-card">
           <div className="flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 className={[
                   'flex h-10 w-10 items-center justify-center',
-                  'rounded-xl border border-gray-200',
-                  'bg-white text-gray-600',
-                  'transition hover:bg-gray-50 hover:text-gray-950',
+                  'rounded-xl border border-line',
+                  'bg-card text-ink-600',
+                  'transition hover:bg-ink-50 hover:text-ink-950',
                   'lg:hidden',
                 ].join(' ')}
                 onClick={() => setOpen(!open)}
@@ -877,17 +867,18 @@ export function TenantLayout() {
               </button>
 
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">
                   Resident portal
                 </p>
 
-                <p className="mt-0.5 hidden text-sm font-bold text-gray-950 sm:block">
+                <p className="mt-0.5 hidden text-sm font-bold text-ink-950 sm:block">
                   Welcome back, {user?.name}
                 </p>
               </div>
             </div>
 
-            <NotificationButton
+            <ThemeToggle />
+              <NotificationButton
               to="/tenant/notifications"
               count={unreadQuery.data}
             />
@@ -911,97 +902,66 @@ export function TenantLayout() {
 
 export function AuthLayout() {
   return (
-    <div className="min-h-screen bg-[#F7F7F8] lg:grid lg:grid-cols-2">
+    <div className="min-h-screen bg-transparent lg:grid lg:grid-cols-2">
       {/* Premium brand panel */}
-      <section className="relative hidden overflow-hidden bg-[#101010] lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-16">
+      <section className="relative hidden overflow-hidden bg-gradient-to-br from-rose-100 via-indigo-100 to-teal-100 dark:from-[#2a1230] dark:via-[#141c45] dark:to-[#0c3340] lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-16">
         {/* Decorative grid */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          className="pointer-events-none absolute inset-0 opacity-[0.05]"
           aria-hidden="true"
           style={{
             backgroundImage:
-              'linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px)',
+              'linear-gradient(var(--color-ink-950) 1px, transparent 1px), linear-gradient(90deg, var(--color-ink-950) 1px, transparent 1px)',
             backgroundSize: '48px 48px',
           }}
         />
 
         <div
-          className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full border border-white/[0.035]"
+          className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full border border-ink-950/10"
           aria-hidden="true"
         />
 
         <div
-          className="pointer-events-none absolute -bottom-48 -left-40 h-[600px] w-[600px] rounded-full border border-[#E92323]/10"
+          className="pointer-events-none absolute -bottom-48 -left-40 h-[600px] w-[600px] rounded-full border border-brand/10"
           aria-hidden="true"
         />
 
         <div className="relative z-10">
-          <Brand dark />
+          <Brand />
         </div>
 
-        <div className="relative z-10 max-w-xl">
+        <div className="relative z-10 max-w-xl pt-8">
           <div className="mb-7 flex items-center gap-3">
-            <span className="h-1 w-10 rounded-full bg-[#E92323]" />
+            <span className="h-1 w-10 rounded-full bg-brand" />
 
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink-600">
               Property management platform
             </span>
           </div>
 
-          <h1 className="text-5xl font-extrabold leading-[1.02] tracking-[-0.045em] text-white xl:text-6xl">
+          <h1 className="text-5xl font-extrabold leading-[1.02] tracking-[-0.045em] text-ink-950 xl:text-6xl">
             Run your hostel.
             <br />
-            <span className="text-[#E92323]">
+            <span className="text-brand">
               Smarter.
             </span>
           </h1>
 
-          <p className="mt-7 max-w-lg text-base leading-7 text-white/45">
+          <p className="mt-7 max-w-lg text-base leading-7 text-ink-700">
             Occupancy, rent, tenants, payments and daily
             property operations — connected in one modern
             workspace.
           </p>
 
-          <div className="mt-10 flex items-center gap-8">
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-white">
-                One
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
-                Workspace
-              </p>
-            </div>
-
-            <div className="h-8 w-px bg-white/10" />
-
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-white">
-                Clear
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
-                Operations
-              </p>
-            </div>
-
-            <div className="h-8 w-px bg-white/10" />
-
-            <div>
-              <p className="text-2xl font-bold tracking-tight text-white">
-                Simple
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
-                Management
-              </p>
-            </div>
-          </div>
+          <LoginVisual />
         </div>
 
         <div className="relative z-10">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-500">
             THE HOSTEL YARD
           </p>
 
-          <p className="mt-1 text-xs text-white/20">
+          <p className="mt-1 text-xs text-ink-400">
             Professional hostel & property management
           </p>
         </div>
@@ -1009,22 +969,15 @@ export function AuthLayout() {
 
       {/* Auth content */}
       <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
-        <div className="w-full max-w-[430px]">
+        <div className="relative w-full max-w-[430px]">
+          <ThemeToggle className="absolute -top-14 right-0 lg:-top-10" />
           {/* Mobile brand */}
-          <div className="mb-10 lg:hidden">
-            <Brand compact />
-
-            <div className="mt-6 text-center">
-              <p className="text-2xl font-extrabold tracking-[-0.03em] text-gray-950">
-                THE HOSTEL YARD
-              </p>
-
-              <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-[#E92323]" />
-
-              <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-gray-400">
-                Property operations
-              </p>
-            </div>
+          <div className="mb-10 text-center lg:hidden">
+            <FullLogo className="mx-auto h-16 w-auto" />
+            <div className="mx-auto mt-4 h-1 w-10 rounded-full bg-brand" />
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-ink-400">
+              Property operations
+            </p>
           </div>
 
           <Outlet />
