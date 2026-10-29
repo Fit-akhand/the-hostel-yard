@@ -114,7 +114,7 @@ export function GlobalSearch() {
         autoComplete="off"
       />
       {open && value.trim() ? (
-        <div className="glass-strong absolute left-0 top-12 z-40 w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-paper/90 shadow-[0_24px_60px_rgba(15,23,42,.25)]">
+        <div className="glass-strong absolute left-0 top-12 z-40 w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-paper shadow-[0_24px_60px_rgba(15,23,42,.25)]">
           <div className="max-h-[60vh] overflow-y-auto p-2">
             {groups.map((g) => {
               const Icon = ICONS[g.label] || FileText
