@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import authRoutes from './routes/authRoutes.js'
 import propertyRoutes from './routes/propertyRoutes.js'
 import managerRoutes from './routes/managerRoutes.js'
+import managerDirectoryRoutes from './routes/managerDirectoryRoutes.js'
 import tenantRoutes from './routes/tenantRoutes.js'
 import roomRoutes from './routes/roomRoutes.js'
 import bedRoutes from './routes/bedRoutes.js'
@@ -115,6 +116,10 @@ app.use(
   '/api/managers',
   managerRoutes
 )
+
+// Owner-only manager list and edit routes. After the invitation routes above, so the public
+// activation links keep working without a login.
+app.use('/api/managers', managerDirectoryRoutes)
 
 // --------------------------------------------------
 // TENANTS

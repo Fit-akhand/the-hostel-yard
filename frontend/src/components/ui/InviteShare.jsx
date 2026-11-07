@@ -23,11 +23,13 @@ const withCurrentOrigin = (link) => {
   }
 }
 
-export function InviteShare({ link: serverLink, name, phone, role }) {
+export function InviteShare({ link: serverLink, name, phone, role, property, inviter }) {
   const link = withCurrentOrigin(serverLink)
   const [copied, setCopied] = useState(false)
   const number = whatsappNumber(phone)
-  const message = `Hi ${name || ''}, you have been invited to join The Hostel Yard as ${role}. Open this link to set up your account: ${link}`.replace('Hi ,', 'Hi,')
+  // Same wording as the message the server sends: who is invited, by whom, to which property, as what.
+  const who = inviter ? `${inviter} has invited you` : 'you have been invited'
+  const message = `Hi ${name || 'there'}, ${who} to join ${property ? `${property} on ` : ''}The Hostel Yard as ${role}. Open this link to set up your account: ${link}`
   const whatsapp = `https://wa.me/${number || ''}?text=${encodeURIComponent(message)}`
   const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(link)
 

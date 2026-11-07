@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { managerApi, propertyApi, staffApi } from '../../services/apis'
 import { InviteShare } from '../../components/ui/InviteShare'
-import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Textarea } from '../../components/ui'
+import { Badge, Button, Card, Field, Input, PageHeader, Select, StatusBadge, Textarea } from '../../components/ui'
 import { DataTable } from '../../components/tables/DataTable'
-import { ConfirmDialog } from '../../components/modals/Modal'
+import { ConfirmDialog, Modal } from '../../components/modals/Modal'
 import { toast } from '../../store/toastStore'
-import { nameOf } from '../../utils/format'
+import { formatDate, nameOf } from '../../utils/format'
 import { asArray } from '../../utils/collections'
 import { MANAGER_ALLOWED_PERMISSIONS, PERMISSION_GROUPS, PERMISSION_LABELS, STAFF_ALLOWED_PERMISSIONS } from '../../config/permissions'
 import { usePropertyStore } from '../../store/propertyStore'
+import { useAuthStore } from '../../store/authStore'
 
 function PermissionSwitch({ checked, indeterminate, onChange, label, strong = false }) {
   const ref = (el) => { if (el) el.indeterminate = Boolean(indeterminate) && !checked }
@@ -81,26 +82,81 @@ function PermissionPicker({ allowed, value, onChange }) {
   )
 }
 
-export function ManagerPage() {
+export function ManagerListPage() {
+  const qc = useQueryClient()
+  const query = useQuery({ queryKey: ['managers'], queryFn: managerApi.list })
+  const managers = asArray(query.data?.managers)
+  const invitations = asArray(query.data?.invitations)
+  const cancel = useMutation({
+    mutationFn: (id) => managerApi.cancelInvitation(id),
+    onSuccess: () => { toast.success('Invitation cancelled.'); qc.invalidateQueries({ queryKey: ['managers'] }) },
+    onError: (e) => toast.error(e.message),
+  })
+
+  return (
+    <div>
+      <PageHeader
+        title="Managers"
+        description="People who run your properties day to day. Open a manager to change their details and what they can do."
+        actions={<Link to="/managers/new"><Button>Add manager</Button></Link>}
+      />
+      <DataTable
+        loading={query.isLoading}
+        error={query.error}
+        rows={managers}
+        rowTo={(m) => `/managers/${m._id}`}
+        emptyTitle="No managers yet"
+        emptyDescription="Add a manager to give someone access to one of your properties."
+        columns={[
+          { key: 'name', header: 'Name', render: (m) => <div><p className="font-medium">{m.name}</p><p className="text-xs text-ink-600">{m.phone}</p></div> },
+          { key: 'properties', header: 'Properties', render: (m) => (m.properties.length ? m.properties.map((p) => p.name).join(', ') : <span className="text-ink-400">None</span>) },
+          { key: 'access', header: 'Access', render: (m) => `${new Set(m.properties.flatMap((p) => p.permissions)).size} permissions` },
+          { key: 'status', header: 'Status', render: (m) => <Badge tone={m.status === 'ACTIVE' ? 'success' : 'warning'}>{m.status === 'ACTIVE' ? 'Active' : 'Suspended'}</Badge> },
+        ]}
+      />
+
+      {invitations.length ? (
+        <div className="mt-8">
+          <h2 className="mb-1 font-display text-xl">Waiting to join</h2>
+          <p className="mb-3 text-sm text-ink-600">Invited, but they have not set up their account yet.</p>
+          <Card className="divide-y divide-line">
+            {invitations.map((i) => (
+              <div key={i._id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+                <div>
+                  <p className="font-medium">{i.managerName}</p>
+                  <p className="text-xs text-ink-600">{i.phone} · {i.property?.name} · link expires {formatDate(i.expiresAt)}</p>
+                </div>
+                <Button size="sm" variant="ghost" loading={cancel.isPending && cancel.variables === i._id} onClick={() => cancel.mutate(i._id)}>Cancel invitation</Button>
+              </div>
+            ))}
+          </Card>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function ManagerInvitePage() {
+  const user = useAuthStore((s) => s.user)
   const properties = useQuery({ queryKey: ['properties'], queryFn: propertyApi.list })
+  const qc = useQueryClient()
   const [form, setForm] = useState({ managerName: '', phone: '', email: '', propertyId: '', permissions: [] })
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const mutation = useMutation({
     mutationFn: () => managerApi.invite(form),
-    onSuccess: (data) => { setResult(data); toast.success('Manager invitation created.') },
+    onSuccess: (data) => { setResult(data); toast.success('Manager invitation created.'); qc.invalidateQueries({ queryKey: ['managers'] }) },
     onError: (e) => setError(e.message),
   })
+  const propertyName = result?.property?.name || asArray(properties.data).find((p) => p._id === form.propertyId)?.name
+
   return (
     <div className="max-w-3xl">
-      <PageHeader
-        title="Managers"
-        description="The backend does not list existing managers. You can invite a manager to a property and later update permissions with their user ID."
-      />
+      <PageHeader title="Add manager" description="They get a one-time link to set their password. Send it on WhatsApp." actions={<Link to="/managers"><Button variant="secondary">Back to managers</Button></Link>} />
       <Card className="p-6">
-        <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); mutation.mutate() }}>
+        <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); setError(''); mutation.mutate() }}>
           <Field label="Name" required><Input value={form.managerName} onChange={(e) => setForm({ ...form, managerName: e.target.value })} /></Field>
-          <Field label="Phone" required><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+          <Field label="Phone" required><Input value={form.phone} inputMode="tel" onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
           <Field label="Email"><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
           <Field label="Property" required>
             <Select value={form.propertyId} onChange={(e) => setForm({ ...form, propertyId: e.target.value })}>
@@ -110,44 +166,123 @@ export function ManagerPage() {
           </Field>
           <PermissionPicker allowed={MANAGER_ALLOWED_PERMISSIONS} value={form.permissions} onChange={(permissions) => setForm({ ...form, permissions })} />
           {error ? <p className="text-sm text-danger">{error}</p> : null}
-          <Button type="submit" loading={mutation.isPending}>Create invitation</Button>
+          <Button type="submit" loading={mutation.isPending} disabled={!form.managerName || !form.phone || !form.propertyId || !form.permissions.length}>Create invitation</Button>
         </form>
         {result?.invitationLink ? (
-          <InviteShare link={result.invitationLink} name={result.manager?.name || form.managerName} phone={result.manager?.phone || form.phone} role="a property manager" />
+          <InviteShare link={result.invitationLink} name={result.manager?.name || form.managerName} phone={result.manager?.phone || form.phone} role="a property manager" property={propertyName} inviter={user?.name} />
         ) : null}
       </Card>
-      <ManagerPermissionUpdate />
     </div>
   )
 }
 
-function ManagerPermissionUpdate() {
+export function ManagerDetailPage() {
+  const { id } = useParams()
+  const qc = useQueryClient()
   const properties = useQuery({ queryKey: ['properties'], queryFn: propertyApi.list })
-  const [managerId, setManagerId] = useState('')
-  const [propertyId, setPropertyId] = useState('')
-  const [permissions, setPermissions] = useState([])
+  const query = useQuery({ queryKey: ['manager', id], queryFn: () => managerApi.get(id) })
+  const m = query.data
+  const [profile, setProfile] = useState(null)
+  const [drafts, setDrafts] = useState({})
+  const [addOpen, setAddOpen] = useState(false)
+  const [add, setAdd] = useState({ propertyId: '', permissions: [] })
+
+  useEffect(() => {
+    if (!m) return
+    setProfile({ name: m.name, phone: m.phone, email: m.email || '' })
+    setDrafts(Object.fromEntries(m.properties.map((p) => [p._id, p.permissions])))
+  }, [m])
+
+  const refresh = () => { qc.invalidateQueries({ queryKey: ['manager', id] }); qc.invalidateQueries({ queryKey: ['managers'] }) }
+  const fail = (e) => toast.error(e.message)
+
+  const saveProfile = useMutation({
+    mutationFn: () => managerApi.update(id, { name: profile.name, phone: profile.phone, ...(profile.email ? { email: profile.email } : {}) }),
+    onSuccess: () => { toast.success('Details saved.'); refresh() }, onError: fail,
+  })
+  const setStatus = useMutation({
+    mutationFn: (status) => managerApi.setStatus(id, status),
+    onSuccess: (_d, status) => { toast.success(status === 'SUSPENDED' ? 'Manager suspended. They can no longer sign in.' : 'Manager reactivated.'); refresh() }, onError: fail,
+  })
+  const savePerms = useMutation({
+    mutationFn: (propertyId) => managerApi.updatePermissions(id, propertyId, { permissions: drafts[propertyId] }),
+    onSuccess: () => { toast.success('Permissions saved.'); refresh() }, onError: fail,
+  })
+  const remove = useMutation({
+    mutationFn: (propertyId) => managerApi.unassign(id, propertyId),
+    onSuccess: () => { toast.success('Removed from the property.'); refresh() }, onError: fail,
+  })
+  const assign = useMutation({
+    mutationFn: () => managerApi.assign(id, add),
+    onSuccess: () => { toast.success('Property assigned.'); setAddOpen(false); setAdd({ propertyId: '', permissions: [] }); refresh() }, onError: fail,
+  })
+
+  if (query.isLoading) return <p className="text-sm text-ink-600">Loading…</p>
+  if (query.error) return <p className="text-sm text-danger">{query.error.message}</p>
+  if (!profile) return null
+
+  const free = asArray(properties.data).filter((p) => !m.properties.some((a) => a._id === p._id))
+
   return (
-    <Card className="mt-6 p-6">
-      <h2 className="font-display text-xl">Update manager permissions</h2>
-      <p className="mb-4 text-sm text-ink-600">Requires the manager’s user ID from the invitation/activation response.</p>
-      <div className="grid gap-3">
-        <Field label="Manager user ID"><Input value={managerId} onChange={(e) => setManagerId(e.target.value)} /></Field>
-        <Field label="Property">
-          <Select value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
-            <option value="">Select</option>
-            {asArray(properties.data).map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
-          </Select>
-        </Field>
-        <PermissionPicker allowed={MANAGER_ALLOWED_PERMISSIONS} value={permissions} onChange={setPermissions} />
-        <Button
-          onClick={() =>
-            managerApi.updatePermissions(managerId, propertyId, { permissions }).then(() => toast.success('Permissions updated.')).catch((e) => toast.error(e.message))
-          }
-        >
-          Save permissions
-        </Button>
+    <div className="grid max-w-4xl gap-5">
+      <PageHeader
+        title={m.name}
+        description={`Manager · last signed in ${m.lastLoginAt ? formatDate(m.lastLoginAt) : 'never'}`}
+        actions={
+          <div className="flex gap-2">
+            <Link to="/managers"><Button variant="secondary">All managers</Button></Link>
+            <Button variant={m.status === 'ACTIVE' ? 'danger' : 'primary'} loading={setStatus.isPending} onClick={() => setStatus.mutate(m.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE')}>
+              {m.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
+            </Button>
+          </div>
+        }
+      />
+      {m.status !== 'ACTIVE' ? <p className="rounded-xl bg-warning-bg px-4 py-3 text-sm text-warning">This manager is suspended and cannot sign in.</p> : null}
+
+      <Card className="p-6">
+        <h2 className="mb-4 font-display text-xl">Details</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Name"><Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} /></Field>
+          <Field label="Phone"><Input value={profile.phone} inputMode="tel" onChange={(e) => setProfile({ ...profile, phone: e.target.value })} /></Field>
+          <Field label="E-mail"><Input value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} /></Field>
+        </div>
+        <Button className="mt-4" loading={saveProfile.isPending} disabled={profile.name.trim().length < 2 || profile.phone.trim().length < 10} onClick={() => saveProfile.mutate()}>Save details</Button>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl">Properties and access</h2>
+        <Button size="sm" variant="secondary" disabled={!free.length} onClick={() => setAddOpen(true)}>Assign another property</Button>
       </div>
-    </Card>
+      {!m.properties.length ? <p className="text-sm text-ink-600">Not assigned to any property.</p> : null}
+      {m.properties.map((p) => (
+        <Card key={p._id} className="p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-display text-lg">{p.name}</h3>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" loading={remove.isPending && remove.variables === p._id} onClick={() => remove.mutate(p._id)}>Remove from property</Button>
+              <Button size="sm" loading={savePerms.isPending && savePerms.variables === p._id} disabled={!(drafts[p._id] || []).length} onClick={() => savePerms.mutate(p._id)}>Save permissions</Button>
+            </div>
+          </div>
+          <PermissionPicker allowed={MANAGER_ALLOWED_PERMISSIONS} value={drafts[p._id] || []} onChange={(permissions) => setDrafts({ ...drafts, [p._id]: permissions })} />
+        </Card>
+      ))}
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Assign another property" wide>
+        <div className="grid gap-4">
+          <Field label="Property" required>
+            <Select value={add.propertyId} onChange={(e) => setAdd({ ...add, propertyId: e.target.value })}>
+              <option value="">Select</option>
+              {free.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+            </Select>
+          </Field>
+          <PermissionPicker allowed={MANAGER_ALLOWED_PERMISSIONS} value={add.permissions} onChange={(permissions) => setAdd({ ...add, permissions })} />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button loading={assign.isPending} disabled={!add.propertyId || !add.permissions.length} onClick={() => assign.mutate()}>Assign</Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
   )
 }
 
@@ -191,6 +326,7 @@ export function StaffListPage() {
 }
 
 export function StaffFormPage() {
+  const authUser = useAuthStore((s) => s.user)
   const properties = useQuery({ queryKey: ['properties'], queryFn: propertyApi.list })
   const [form, setForm] = useState({
     propertyId: '',
@@ -239,7 +375,7 @@ export function StaffFormPage() {
           <Button type="submit" loading={mutation.isPending}>Create invitation</Button>
         </form>
         {result?.invitationLink ? (
-          <InviteShare link={result.invitationLink} name={result.staff?.name || form.staffName} phone={result.staff?.phone || form.phone} role="a staff member" />
+          <InviteShare link={result.invitationLink} name={result.staff?.name || form.staffName} phone={result.staff?.phone || form.phone} role="a staff member" property={result.property?.name} inviter={authUser?.name} />
         ) : null}
       </Card>
     </div>

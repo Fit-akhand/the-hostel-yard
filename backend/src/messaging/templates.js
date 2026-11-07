@@ -61,7 +61,7 @@ export const TEMPLATES = {
   }),
   INVITE: (v) => ({
     title: 'You are invited to The Hostel Yard',
-    body: `Hi ${v.name}, you have been invited to join The Hostel Yard as ${v.role}. Open this link to set up your account: ${v.link}${sign}`,
+    body: `Hi ${v.name}, ${v.inviter ? `${v.inviter} has invited you` : 'you have been invited'} to join ${v.property ? `${v.property} on ` : ''}The Hostel Yard as ${v.role}. Open this link to set up your account: ${v.link}${sign}`,
   }),
   TEST: (v) => ({
     title: 'Test message',

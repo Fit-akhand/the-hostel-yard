@@ -30,12 +30,13 @@ const tenantInvitationSchema =
         required: true,
       },
 
-      email: {
-        type: String,
-        trim: true,
-        lowercase: true,
-        required: true,
-      },
+      // Optional: tenants are usually invited by phone (WhatsApp), like managers.
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null,
+    },
 
       tokenHash: {
         type: String,

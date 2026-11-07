@@ -117,11 +117,11 @@ export const notifyAnnouncementExternal = (announcement, tenantIds) =>
   })
 
 // Login links for managers, staff and tenants. Goes by WhatsApp (or SMS) and, when known, e-mail.
-export const sendInvitationMessage = ({ organization, property = null, name, role, link, phone, email }) =>
+export const sendInvitationMessage = ({ organization, property = null, propertyName, inviterName, name, role, link, phone, email }) =>
   safely('invitation', async () => {
     const settings = await getSettings(organization)
     await deliver({
-      organization, property, type: 'INVITE', vars: { name, role, link },
+      organization, property, type: 'INVITE', vars: { name, role, link, property: propertyName, inviter: inviterName },
       to: { phone, email }, force: [settings.channels?.whatsapp ? 'WHATSAPP' : 'SMS', 'EMAIL'],
     })
   })

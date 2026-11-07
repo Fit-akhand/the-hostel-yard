@@ -1,3 +1,4 @@
+import Property from '../models/Property.js'
 import { sendInvitationMessage } from './eventMessaging.js'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -110,40 +111,32 @@ export const inviteTenant =
         tenant.property,
     })
 
-    // Tenant already has a linked account.
+    // A tenant who has not accepted yet can be invited again (lost link, expired link). One who has an
+    // active account cannot.
+    let tenantUser = null
     if (tenant.user) {
-      throw createError(
-        'This tenant already has an account.',
-        409
-      )
+      tenantUser = await User.findById(tenant.user)
+      if (tenantUser && tenantUser.status !== 'INVITED') {
+        throw createError(
+          'This tenant already has an account.',
+          409
+        )
+      }
     }
 
-    if (!tenant.email) {
+    // Another account must not already use this phone or e-mail. Only look for an e-mail when there is one:
+    // matching "email: null" would hit every account without an e-mail.
+    const identity = [{ phone: tenant.phone }]
+    if (tenant.email) identity.push({ email: tenant.email })
+
+    const clash = await User.findOne({
+      $or: identity,
+      ...(tenantUser ? { _id: { $ne: tenantUser._id } } : {}),
+    })
+
+    if (clash) {
       throw createError(
-        'Tenant must have an email address before an invitation can be sent.',
-        400
-      )
-    }
-
-    // --------------------------------------------------
-    // CHECK EXISTING USER
-    // --------------------------------------------------
-
-    const existingUser =
-      await User.findOne({
-        $or: [
-          {
-            email: tenant.email,
-          },
-          {
-            phone: tenant.phone,
-          },
-        ],
-      })
-
-    if (existingUser) {
-      throw createError(
-        'An account already exists with this email or phone number.',
+        'An account already exists with this phone number or e-mail.',
         409
       )
     }
@@ -180,36 +173,28 @@ export const inviteTenant =
     const expiresAt =
       new Date(
         Date.now() +
-          24 * 60 * 60 * 1000
+          3 * 24 * 60 * 60 * 1000
       )
 
     // --------------------------------------------------
     // CREATE TENANT USER
     // --------------------------------------------------
 
-    const tenantUser =
-      await User.create({
+    if (!tenantUser) {
+      tenantUser = await User.create({
         name: tenant.name,
-
         phone: tenant.phone,
-
-        email: tenant.email,
-
+        ...(tenant.email ? { email: tenant.email } : {}),
         role: 'TENANT',
-
-        organization:
-          tenant.organization,
-
+        organization: tenant.organization,
         status: 'INVITED',
-
         passwordHash: null,
       })
 
-    // Link Tenant → User
-    tenant.user =
-      tenantUser._id
-
-    await tenant.save()
+      // Link Tenant → User
+      tenant.user = tenantUser._id
+      await tenant.save()
+    }
 
     // --------------------------------------------------
     // CREATE INVITATION
@@ -230,7 +215,7 @@ export const inviteTenant =
           user._id,
 
         email:
-          tenant.email,
+          tenant.email || null,
 
         tokenHash,
 
@@ -250,7 +235,8 @@ export const inviteTenant =
     const invitationUrl =
       `${frontendUrl}/tenant/accept-invitation?token=${rawToken}`
 
-    await sendInvitationMessage({ organization: user.organization, property: tenant.property, name: tenant.name, role: 'a resident', link: invitationUrl, phone: tenant.phone, email: tenant.email })
+    const tenantProperty = await Property.findById(tenant.property).select('name').lean()
+    await sendInvitationMessage({ organization: user.organization, property: tenant.property, propertyName: tenantProperty?.name, inviterName: user.name, name: tenant.name, role: 'a resident', link: invitationUrl, phone: tenant.phone, email: tenant.email })
 
     return {
       invitationId:

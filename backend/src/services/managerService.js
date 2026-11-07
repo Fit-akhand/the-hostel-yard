@@ -127,7 +127,7 @@ export const createManagerInvitation = async ({
   const invitationLink =
     `${frontendUrl}/manager/activate/${token}`
 
-  await sendInvitationMessage({ organization: user.organization, property: property._id, name: managerName, role: 'a property manager', link: invitationLink, phone, email })
+  await sendInvitationMessage({ organization: user.organization, property: property._id, propertyName: property.name, inviterName: user.name, name: managerName, role: 'a property manager', link: invitationLink, phone, email })
 
   return {
     invitationId: invitation._id,

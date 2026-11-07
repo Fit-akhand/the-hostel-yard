@@ -75,3 +75,15 @@ test('tenant UPI payment validation', async (t) => {
     assert.match(m.body, /9,500/)
   })
 })
+
+test('invitation message names the person, who invited them, the property and the role', async () => {
+  const { TEMPLATES } = await import('../src/messaging/templates.js')
+  const m = TEMPLATES.INVITE({ name: 'Kushal Singh', inviter: 'Akhand Raj Singh', property: 'Sunrise Boys PG', role: 'a property manager', link: 'https://x.test/manager/activate/abc' })
+  assert.match(m.body, /Hi Kushal Singh/)
+  assert.match(m.body, /Akhand Raj Singh has invited you/)
+  assert.match(m.body, /Sunrise Boys PG/)
+  assert.match(m.body, /a property manager/)
+  assert.match(m.body, /https:\/\/x\.test\/manager\/activate\/abc/)
+  // Still reads well when nothing else is known.
+  assert.match(TEMPLATES.INVITE({ name: 'A', role: 'a resident', link: 'l' }).body, /you have been invited to join The Hostel Yard as a resident/)
+})

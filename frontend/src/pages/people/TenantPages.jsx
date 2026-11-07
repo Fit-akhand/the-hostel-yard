@@ -258,7 +258,10 @@ export function TenantDetailPage() {
   const invite = useMutation({
     mutationFn: () => tenantApi.invite(tenantId),
     onSuccess: (link) => {
-      setInviteLink(typeof link === 'string' ? link : link?.invitationLink || JSON.stringify(link))
+      // The server answers with { invitationUrl, expiresAt, ... }. Show only the link, never the raw response.
+      const url = typeof link === 'string' ? link : link?.invitationUrl || link?.invitationLink
+      if (!url) { toast.error('The invitation was created but no link came back. Try again.'); return }
+      setInviteLink(url)
       toast.success('Invitation created.')
     },
     onError: (e) => toast.error(e.message),
@@ -391,13 +394,13 @@ export function TenantDetailPage() {
 
       <Modal
         open={inviteOpen}
-        title="Invite tenant to the portal"
+        title={`Invite ${t?.name || 'tenant'} to the portal`}
         onClose={() => setInviteOpen(false)}
         footer={
           !inviteLink ? (
             <>
               <Button variant="secondary" onClick={() => setInviteOpen(false)}>Cancel</Button>
-              <Button loading={invite.isPending} onClick={() => invite.mutate()}>Send invitation</Button>
+              <Button loading={invite.isPending} onClick={() => invite.mutate()}>Create invitation link</Button>
             </>
           ) : (
             <Button onClick={() => setInviteOpen(false)}>Done</Button>
@@ -405,9 +408,9 @@ export function TenantDetailPage() {
         }
       >
         {inviteLink ? (
-          <InviteShare link={inviteLink} name={t?.name} phone={t?.phone} role="a resident" />
+          <InviteShare link={inviteLink} name={t?.name} phone={t?.phone} role="a resident" property={nameOf(t?.property)} inviter={user?.name} />
         ) : (
-          <p className="text-sm text-ink-600">This creates a portal invitation. The tenant sets a password from the link.</p>
+          <p className="text-sm text-ink-600">This makes a one-time link for {t?.name} to set a password and open the resident portal. No e-mail is needed: send it on WhatsApp. The link works for 3 days, and you can create a new one any time before it is used.</p>
         )}
       </Modal>
       <Modal

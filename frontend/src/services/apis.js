@@ -196,6 +196,13 @@ export const managerApi = {
     apiClient
       .patch(`/managers/${managerId}/properties/${propertyId}/permissions`, body)
       .then((r) => r.data.data || r.data),
+  list: () => get('/managers'),
+  get: (id) => get(`/managers/${id}`, undefined, 'manager'),
+  update: (id, body) => mutate('put', `/managers/${id}`, body, 'manager'),
+  setStatus: (id, status) => mutate('patch', `/managers/${id}/status`, { status }, 'manager'),
+  assign: (id, body) => mutate('post', `/managers/${id}/properties`, body, 'manager'),
+  unassign: (id, propertyId) => apiClient.delete(`/managers/${id}/properties/${propertyId}`).then(unwrap),
+  cancelInvitation: (invitationId) => apiClient.delete(`/managers/invitations/${invitationId}`).then(unwrap),
 }
 
 export const staffApi = {

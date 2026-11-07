@@ -53,7 +53,7 @@ import {
   NotificationDetailPage,
   NotificationPage,
 } from '../pages/ops/OpsPages'
-import { ManagerPage, StaffDetailPage, StaffFormPage, StaffListPage } from '../pages/team/TeamPages'
+import { ManagerDetailPage, ManagerInvitePage, ManagerListPage, StaffDetailPage, StaffFormPage, StaffListPage } from '../pages/team/TeamPages'
 import { ReportsPage } from '../pages/reports/ReportsPage'
 import { AttendancePage, EmployeeDetailPage, EmployeeFormPage, EmployeeListPage } from '../pages/employees/EmployeePages'
 import { PayrollPage, PayslipPage } from '../pages/employees/PayrollPages'
@@ -222,7 +222,9 @@ export function AppRoutes() {
             <Route path="/announcements/:announcementId" element={<AnnouncementDetailPage />} />
 
             <Route element={<RoleRoute roles={[ROLES.BUSINESS_OWNER]} />}>
-              <Route path="/managers" element={<ManagerPage />} />
+              <Route path="/managers" element={<ManagerListPage />} />
+              <Route path="/managers/new" element={<ManagerInvitePage />} />
+              <Route path="/managers/:id" element={<ManagerDetailPage />} />
             </Route>
 
             <Route element={<RoleRoute permission={PERMISSIONS.VIEW_STAFF} />}>

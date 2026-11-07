@@ -276,7 +276,7 @@ export const createStaffInvitation =
     const invitationLink =
       `${frontendUrl}/staff/activate/${token}`
 
-    await sendInvitationMessage({ organization: user.organization, property: property._id, name: staffName, role: 'a staff member', link: invitationLink, phone, email })
+    await sendInvitationMessage({ organization: user.organization, property: property._id, propertyName: property.name, inviterName: user.name, name: staffName, role: 'a staff member', link: invitationLink, phone, email })
 
     return {
       invitationId:
