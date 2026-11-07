@@ -22,7 +22,9 @@ import { usePropertyStore } from '../../store/propertyStore'
 import { can } from '../../config/authz'
 import { PERMISSIONS } from '../../config/permissions'
 import { useAuthStore } from '../../store/authStore'
+import { InviteShare } from '../../components/ui/InviteShare'
 import { DepositPanel } from './DepositPages'
+import { TenantProfile } from './TenantProfile'
 
 export function TenantListPage() {
   const user = useAuthStore((s) => s.user)
@@ -331,20 +333,7 @@ export function TenantDetailPage() {
         ]}
       />
       <div className="mt-5">
-        {tab === 'overview' ? (
-          <Card className="grid gap-4 p-6 sm:grid-cols-2">
-            <Info label="Email" value={t?.email || '—'} />
-            <Info label="Gender" value={t?.gender} />
-            <Info label="Move-in" value={formatDate(t?.moveInDate)} />
-            <Info label="Notice date" value={formatDate(t?.noticeDate)} />
-            <Info label="Expected move-out" value={formatDate(t?.expectedMoveOutDate)} />
-            <Info label="Actual move-out" value={formatDate(t?.actualMoveOutDate)} />
-            <Info label="Emergency" value={t?.emergencyContact?.name || '—'} />
-            <Info label="Emergency phone" value={t?.emergencyContact?.phone || '—'} />
-            <Info label="Address" value={t?.address || '—'} />
-            <Info label="Account" value={t?.user ? 'Linked' : 'Not invited / not linked'} />
-          </Card>
-        ) : null}
+        {tab === 'overview' && t ? <TenantProfile tenant={t} active={active} dues={asArray(dues.data)} payments={asArray(payments.data)} complaints={asArray(complaints.data)} onTab={setTab} /> : null}
         {tab === 'stay' ? (
           <DataTable
             rows={stay}
@@ -416,7 +405,7 @@ export function TenantDetailPage() {
         }
       >
         {inviteLink ? (
-          <p className="break-all text-sm text-ink-600">Share this activation link securely: {inviteLink}</p>
+          <InviteShare link={inviteLink} name={t?.name} phone={t?.phone} role="a resident" />
         ) : (
           <p className="text-sm text-ink-600">This creates a portal invitation. The tenant sets a password from the link.</p>
         )}

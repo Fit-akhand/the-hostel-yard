@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { managerApi, propertyApi, staffApi } from '../../services/apis'
+import { InviteShare } from '../../components/ui/InviteShare'
 import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Textarea } from '../../components/ui'
 import { DataTable } from '../../components/tables/DataTable'
 import { ConfirmDialog } from '../../components/modals/Modal'
@@ -112,7 +113,7 @@ export function ManagerPage() {
           <Button type="submit" loading={mutation.isPending}>Create invitation</Button>
         </form>
         {result?.invitationLink ? (
-          <p className="mt-4 break-all text-sm text-ink-600">Share this link securely: {result.invitationLink}</p>
+          <InviteShare link={result.invitationLink} name={result.manager?.name || form.managerName} phone={result.manager?.phone || form.phone} role="a property manager" />
         ) : null}
       </Card>
       <ManagerPermissionUpdate />
@@ -237,7 +238,9 @@ export function StaffFormPage() {
           {error ? <p className="text-sm text-danger">{error}</p> : null}
           <Button type="submit" loading={mutation.isPending}>Create invitation</Button>
         </form>
-        {result?.invitationLink ? <p className="mt-4 break-all text-sm">Share securely: {result.invitationLink}</p> : null}
+        {result?.invitationLink ? (
+          <InviteShare link={result.invitationLink} name={result.staff?.name || form.staffName} phone={result.staff?.phone || form.phone} role="a staff member" />
+        ) : null}
       </Card>
     </div>
   )
