@@ -6,3 +6,9 @@ dist
 .vercel
 *.log
 .DS_Store
+
+# Local-only helpers and files (kept on this computer, not in the repository)
+.claude/
+backend/scripts/demoScreens.js
+backend/scripts/importRentSheets.js
+backend/scripts/setLocalOwnerPassword.js
