@@ -202,6 +202,7 @@ export const managerApi = {
   setStatus: (id, status) => mutate('patch', `/managers/${id}/status`, { status }, 'manager'),
   assign: (id, body) => mutate('post', `/managers/${id}/properties`, body, 'manager'),
   unassign: (id, propertyId) => apiClient.delete(`/managers/${id}/properties/${propertyId}`).then(unwrap),
+  resendInvitation: (invitationId) => mutate('post', `/managers/invitations/${invitationId}/resend`, {}),
   cancelInvitation: (invitationId) => apiClient.delete(`/managers/invitations/${invitationId}`).then(unwrap),
 }
 

@@ -96,9 +96,9 @@ export const createManagerInvitation = async ({
     tokenHash,
   } = generateInvitationToken()
 
-  // 6. Invitation expires in 24 hours
+  // 6. Invitation expires in 3 days (it is usually sent on WhatsApp, and the owner can send a new link any time)
   const expiresAt = new Date(
-    Date.now() + 24 * 60 * 60 * 1000
+    Date.now() + 3 * 24 * 60 * 60 * 1000
   )
 
   // 7. Create invitation

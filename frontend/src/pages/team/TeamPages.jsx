@@ -82,11 +82,26 @@ function PermissionPicker({ allowed, value, onChange }) {
   )
 }
 
+// 9876543210 -> 919876543210; null for a placeholder or invalid number.
+const whatsappNumber = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '')
+  if (d.length === 10 && /^[6-9]/.test(d)) return `91${d}`
+  if (d.length === 12 && d.startsWith('91')) return d
+  return null
+}
+
 export function ManagerListPage() {
   const qc = useQueryClient()
   const query = useQuery({ queryKey: ['managers'], queryFn: managerApi.list })
   const managers = asArray(query.data?.managers)
   const invitations = asArray(query.data?.invitations)
+  const user = useAuthStore((s) => s.user)
+  const [shared, setShared] = useState(null)
+  const resend = useMutation({
+    mutationFn: (id) => managerApi.resendInvitation(id),
+    onSuccess: (data) => { setShared(data); qc.invalidateQueries({ queryKey: ['managers'] }) },
+    onError: (e) => toast.error(e.message),
+  })
   const cancel = useMutation({
     mutationFn: (id) => managerApi.cancelInvitation(id),
     onSuccess: () => { toast.success('Invitation cancelled.'); qc.invalidateQueries({ queryKey: ['managers'] }) },
@@ -118,20 +133,29 @@ export function ManagerListPage() {
       {invitations.length ? (
         <div className="mt-8">
           <h2 className="mb-1 font-display text-xl">Waiting to join</h2>
-          <p className="mb-3 text-sm text-ink-600">Invited, but they have not set up their account yet.</p>
+          <p className="mb-3 text-sm text-ink-600">Invited, but they have not set up their account yet. Send the link again if it was lost or has run out.</p>
           <Card className="divide-y divide-line">
             {invitations.map((i) => (
               <div key={i._id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
                 <div>
-                  <p className="font-medium">{i.managerName}</p>
-                  <p className="text-xs text-ink-600">{i.phone} · {i.property?.name} · link expires {formatDate(i.expiresAt)}</p>
+                  <p className="flex items-center gap-2 font-medium">{i.managerName} {i.expired ? <Badge tone="warning">Link expired</Badge> : null}</p>
+                  <p className="text-xs text-ink-600">{i.phone} · {i.property?.name} · {i.expired ? `expired ${formatDate(i.expiresAt)}` : `link works until ${formatDate(i.expiresAt)}`}</p>
                 </div>
-                <Button size="sm" variant="ghost" loading={cancel.isPending && cancel.variables === i._id} onClick={() => cancel.mutate(i._id)}>Cancel invitation</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" loading={resend.isPending && resend.variables === i._id} onClick={() => resend.mutate(i._id)}>Send invite link</Button>
+                  <Button size="sm" variant="ghost" loading={cancel.isPending && cancel.variables === i._id} onClick={() => cancel.mutate(i._id)}>Cancel</Button>
+                </div>
               </div>
             ))}
           </Card>
         </div>
       ) : null}
+
+      <Modal open={Boolean(shared)} onClose={() => setShared(null)} title={`Invite ${shared?.manager?.name || ''}`}>
+        {shared ? <InviteShare link={shared.invitationLink} name={shared.manager?.name} phone={shared.manager?.phone} role="a property manager" property={shared.property?.name} inviter={user?.name} /> : null}
+        <p className="mt-3 text-xs text-ink-600">This is a new link. Any link sent before no longer works.</p>
+        <div className="mt-4 flex justify-end"><Button onClick={() => setShared(null)}>Done</Button></div>
+      </Modal>
     </div>
   )
 }
@@ -231,6 +255,9 @@ export function ManagerDetailPage() {
         actions={
           <div className="flex gap-2">
             <Link to="/managers"><Button variant="secondary">All managers</Button></Link>
+            <a href={`https://wa.me/${whatsappNumber(m.phone) || ''}?text=${encodeURIComponent(`Hi ${m.name}, you can sign in to The Hostel Yard here: ${window.location.origin}/login`)}`} target="_blank" rel="noreferrer">
+              <Button variant="secondary">Message on WhatsApp</Button>
+            </a>
             <Button variant={m.status === 'ACTIVE' ? 'danger' : 'primary'} loading={setStatus.isPending} onClick={() => setStatus.mutate(m.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE')}>
               {m.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
             </Button>

@@ -3,6 +3,8 @@ import Property from '../models/Property.js'
 import ManagerInvitation from '../models/ManagerInvitation.js'
 import PropertyManagerAssignment from '../models/PropertyManagerAssignment.js'
 import { MANAGER_ALLOWED_PERMISSIONS } from '../constants/managerPermissions.js'
+import { generateInvitationToken } from '../utils/invitationToken.js'
+import { sendInvitationMessage } from './eventMessaging.js'
 
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode })
 
@@ -29,12 +31,13 @@ export const listManagers = async ({ owner }) => {
   const users = (await User.find({ role: 'PROPERTY_MANAGER' }).sort({ name: 1 })).filter((u) => sameOrg(u, owner))
   const assignments = await PropertyManagerAssignment.find({ manager: { $in: users.map((u) => u._id) }, status: { $ne: 'REMOVED' } }).populate('property', 'name')
 
-  const invitations = await ManagerInvitation.find({ organization: owner.organization, status: 'PENDING', expiresAt: { $gt: new Date() } })
+  // Waiting invitations, including ones whose link has run out: those still need a new link.
+  const invitations = await ManagerInvitation.find({ organization: owner.organization, status: { $in: ['PENDING', 'EXPIRED'] } })
     .populate('property', 'name').sort({ createdAt: -1 })
 
   return {
     managers: users.map((u) => present(u, assignments.filter((a) => String(a.manager) === String(u._id)))),
-    invitations: invitations.map((i) => ({ _id: i._id, managerName: i.managerName, phone: i.phone, email: i.email, property: i.property, expiresAt: i.expiresAt })),
+    invitations: invitations.map((i) => ({ _id: i._id, managerName: i.managerName, phone: i.phone, email: i.email, property: i.property, expiresAt: i.expiresAt, expired: i.status === 'EXPIRED' || i.expiresAt < new Date() })),
   }
 }
 
@@ -96,4 +99,32 @@ export const cancelInvitation = async ({ owner, invitationId }) => {
   invitation.status = 'CANCELLED'
   await invitation.save()
   return { cancelled: true }
+}
+
+// Gives a waiting invitation a fresh link (the old one stops working). The raw link cannot be rebuilt from what is
+// stored, because only a hash of it is kept, so a new token is made.
+export const resendInvitation = async ({ owner, invitationId }) => {
+  const invitation = await ManagerInvitation.findOne({ _id: invitationId, organization: owner.organization, status: { $in: ['PENDING', 'EXPIRED'] } }).populate('property', 'name')
+  if (!invitation) throw fail('Invitation not found.', 404)
+
+  if (await User.exists({ phone: invitation.phone })) throw fail('This phone number is already registered, so there is nothing to invite.', 409)
+
+  const { token, tokenHash } = generateInvitationToken()
+  invitation.invitationTokenHash = tokenHash
+  invitation.status = 'PENDING'
+  invitation.expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+  await invitation.save()
+
+  const invitationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/manager/activate/${token}`
+  await sendInvitationMessage({
+    organization: owner.organization, property: invitation.property?._id, propertyName: invitation.property?.name, inviterName: owner.name,
+    name: invitation.managerName, role: 'a property manager', link: invitationLink, phone: invitation.phone, email: invitation.email,
+  })
+
+  return {
+    invitationLink,
+    expiresAt: invitation.expiresAt,
+    manager: { name: invitation.managerName, phone: invitation.phone },
+    property: { name: invitation.property?.name },
+  }
 }

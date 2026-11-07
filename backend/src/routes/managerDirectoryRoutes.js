@@ -32,6 +32,7 @@ router.use(protect, authorizeRoles('BUSINESS_OWNER'))
 
 router.get('/', wrap(async (req, res) => send(res, await svc.listManagers({ owner: req.user }))))
 router.delete('/invitations/:invitationId', wrap(async (req, res) => send(res, await svc.cancelInvitation({ owner: req.user, invitationId: req.params.invitationId }), 'Invitation cancelled.')))
+router.post('/invitations/:invitationId/resend', wrap(async (req, res) => send(res, await svc.resendInvitation({ owner: req.user, invitationId: req.params.invitationId }), 'New invitation link created.')))
 router.get('/:managerId', wrap(async (req, res) => send(res, { manager: await svc.getManager({ owner: req.user, managerId: req.params.managerId }) })))
 router.put('/:managerId', validate(profileSchema), wrap(async (req, res) => send(res, { manager: await svc.updateManagerProfile({ owner: req.user, managerId: req.params.managerId, data: req.body }) }, 'Manager updated.')))
 router.patch('/:managerId/status', validate(statusSchema), wrap(async (req, res) => send(res, { manager: await svc.setManagerStatus({ owner: req.user, managerId: req.params.managerId, status: req.body.status }) }, 'Manager status updated.')))
