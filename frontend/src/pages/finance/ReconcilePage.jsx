@@ -15,7 +15,7 @@ const LABEL = { MATCH: 'Matches', MISMATCH: 'Amount differs', NOT_FOUND: 'Not on
 const sampleStatement = (payments) => {
   const rows = payments.slice(0, 4).map((p, i) => {
     const amount = i === 3 ? p.amount - 500 : p.amount
-    return `01/11/26,"UPI-${String(nameOf(p.tenant)).toUpperCase()}-X@YBL-HDFC0000339-${p.transactionReference}-RENT",000${p.transactionReference},01/11/26,,"${amount}.00","1,00,000.00"`
+    return `01/11/26,"UPI-${String(nameOf(p.tenant)).toUpperCase()}-X@YBL-HDFC0000001-${p.transactionReference}-RENT",000${p.transactionReference},01/11/26,,"${amount}.00","1,00,000.00"`
   })
   rows.push('02/11/26,"UPI-SOMEONE ELSE-X@OKAXIS-SBIN0001234-999999999999-HELLO",0000999999999999,02/11/26,,"1,000.00","1,01,000.00"')
   return `Date,Narration,Chq./Ref.No.,Value Dt,Withdrawal Amt.,Deposit Amt.,Closing Balance\n${rows.join('\n')}\n`
