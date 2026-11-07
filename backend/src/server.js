@@ -19,3 +19,6 @@ startServer().catch((error) => {
   console.error(error.message)
   process.exit(1)
 })
+
+// Hosts that run the app as a function (Vercel) look for the app as the default export.
+export default app

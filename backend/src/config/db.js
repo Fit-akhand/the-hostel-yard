@@ -21,11 +21,11 @@ export const connectDB = async () => {
 
     console.log(`MongoDB connected: ${connection.connection.host}`)
 
-    try {
-      await healTenantUserIndex()
-    } catch (error) {
+    // Runs in the background. Startup must not wait for it: on Vercel the server has to be listening within
+    // moments of the database connecting, and a slow repair made the function fail to start.
+    healTenantUserIndex().catch((error) => {
       console.error('Could not repair the tenant index:', error.message)
-    }
+    })
 
     return connection
   } catch (error) {
