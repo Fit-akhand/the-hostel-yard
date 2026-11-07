@@ -199,7 +199,7 @@ export function Card({ children, className }) {
   )
 }
 
-export function Badge({ tone = 'neutral', children }) {
+export function Badge({ tone = 'neutral', children, title }) {
   const tones = {
     neutral: [
       'border-ink-200 bg-ink-50 text-ink-700',
@@ -228,6 +228,7 @@ export function Badge({ tone = 'neutral', children }) {
 
   return (
     <span
+      title={title}
       className={cx(
         'inline-flex items-center rounded-full border',
         'px-2.5 py-1',

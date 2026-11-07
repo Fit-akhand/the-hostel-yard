@@ -41,6 +41,10 @@ const notificationSchema = new mongoose.Schema(
 
         'ANNOUNCEMENT',
 
+        'RENT_REMINDER',
+        'RENT_OVERDUE',
+        'DAILY_DIGEST',
+
         'GENERAL',
       ],
       default: 'GENERAL',

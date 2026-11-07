@@ -333,7 +333,7 @@ export function RentPage() {
         columns={[
           { key: 'tenant', header: 'Tenant', render: (d) => nameOf(d.tenant) },
           { key: 'billingMonth', header: 'Month' },
-          { key: 'amount', header: 'Amount', render: (d) => formatINR(d.amount) },
+          { key: 'amount', header: 'Amount', render: (d) => <span>{formatINR(d.amount)}{d.lateFee ? <span className="block text-xs text-warning">incl. late fee {formatINR(d.lateFee)}</span> : null}</span> },
           { key: 'paidAmount', header: 'Paid', render: (d) => formatINR(d.paidAmount) },
           { key: 'status', header: 'Status', render: (d) => <StatusBadge status={d.status} /> },
           { key: 'dueDate', header: 'Due', render: (d) => formatDate(d.dueDate) },
@@ -529,6 +529,7 @@ export function PaymentListPage() {
           <option value="">All methods</option>
           <option>CASH</option>
           <option>UPI</option>
+          <option>ONLINE</option>
         </Select>
       </div>
       <DataTable
@@ -576,6 +577,7 @@ export function PaymentDetailPage() {
         <p>{formatDate(p?.paymentDate)}</p>
         <p>Reference {p?.transactionReference || '—'}</p>
         <p>{p?.notes || ''}</p>
+        {p?.status === 'VERIFIED' ? <Link to={`/receipts/${paymentId}`}><Button variant="secondary">View receipt {p.receiptNumber ? `(${p.receiptNumber})` : ''}</Button></Link> : null}
         {p?.status === 'PENDING' && can(user, PERMISSIONS.VERIFY_PAYMENTS) ? (
           <Button onClick={() => verify.mutate()} loading={verify.isPending}>Verify</Button>
         ) : null}

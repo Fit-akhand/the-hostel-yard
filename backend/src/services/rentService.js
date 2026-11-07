@@ -334,6 +334,12 @@ export const getRentDues = async ({
         dueDate: -1,
       })
 
+  // A tenant only ever sees their own rent.
+  if (user.role === 'TENANT') {
+    const own = await Tenant.findOne({ user: user._id, organization: user.organization }).select('_id')
+    return dues.filter((due) => String(due.tenant?._id) === String(own?._id))
+  }
+
   if (user.role === 'BUSINESS_OWNER') {
   return dues
 }
@@ -429,11 +435,17 @@ export const getTenantRentPaymentInfo = async ({
   // FIND TENANT'S OWN RENT DUE
   // ------------------------------------------------
 
+  // `RentDue.tenant` holds the Tenant record id, not the login (User) id.
+  const ownTenant = await Tenant.findOne({
+    user: user._id,
+    organization: user.organization,
+  }).select('_id')
+
   const rentDue =
     await RentDue.findOne({
       _id: rentDueId,
       organization: user.organization,
-      tenant: user._id,
+      tenant: ownTenant?._id,
     })
       .populate(
         'property',
@@ -571,6 +583,14 @@ export const generateMonthlyDues = async ({
     })
   }
 
+  const { created, skipped } = await createDuesForPlans(plans, billingMonth)
+
+  return { billingMonth, created, skipped }
+}
+
+// Creates the rent due for `billingMonth` for every plan that does not have one yet. No access checks:
+// callers (the owner endpoint and the daily job) decide who may do this.
+export const createDuesForPlans = async (plans, billingMonth) => {
   const existing = await RentDue.find({
     rentPlan: { $in: plans.map((p) => p._id) },
     billingMonth,
@@ -596,9 +616,5 @@ export const generateMonthlyDues = async ({
 
   if (toCreate.length) await RentDue.insertMany(toCreate)
 
-  return {
-    billingMonth,
-    created: toCreate.length,
-    skipped: plans.length - toCreate.length,
-  }
+  return { created: toCreate.length, skipped: plans.length - toCreate.length }
 }

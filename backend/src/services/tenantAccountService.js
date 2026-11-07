@@ -1,3 +1,4 @@
+import { sendInvitationMessage } from './eventMessaging.js'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
@@ -248,6 +249,8 @@ export const inviteTenant =
 
     const invitationUrl =
       `${frontendUrl}/tenant/accept-invitation?token=${rawToken}`
+
+    await sendInvitationMessage({ organization: user.organization, property: tenant.property, name: tenant.name, role: 'a resident', link: invitationUrl, phone: tenant.phone, email: tenant.email })
 
     return {
       invitationId:

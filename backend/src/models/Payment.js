@@ -38,7 +38,7 @@ const paymentSchema = new mongoose.Schema(
 
     method: {
       type: String,
-      enum: ['CASH', 'UPI'],
+      enum: ['CASH', 'UPI', 'ONLINE'],
       required: true,
     },
 
@@ -51,6 +51,12 @@ const paymentSchema = new mongoose.Schema(
       ],
       default: 'PENDING',
       index: true,
+    },
+
+    // Issued when the payment is verified, e.g. THY-2026-000123.
+    receiptNumber: {
+      type: String,
+      default: null,
     },
 
     transactionReference: {

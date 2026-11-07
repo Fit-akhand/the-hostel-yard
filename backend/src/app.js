@@ -20,6 +20,12 @@ import staffRoutes from './routes/staffRoutes.js'
 import dashboardRoutes from './modules/dashboard/dashboardRoutes.js'
 import reportRoutes from './modules/reports/reportRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
+import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js'
+import jobRoutes from './routes/jobRoutes.js'
+import financeSettingsRoutes from './routes/financeSettingsRoutes.js'
+import gatewayRoutes from './routes/gatewayRoutes.js'
+import { receiptRouter, depositRouter } from './routes/receiptDepositRoutes.js'
+import { employeeRouter, attendanceRouter, payrollRouter } from './routes/employeeRoutes.js'
 
 import {
   errorHandler,
@@ -62,7 +68,8 @@ app.use(
   })
 )
 
-app.use(express.json())
+// rawBody is kept so the payment webhook signature can be checked against the exact bytes received.
+app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf } }))
 app.use(
   express.urlencoded({
     extended: true,
@@ -205,6 +212,16 @@ app.use(
 // --------------------------------------------------
 // ERROR HANDLING
 // --------------------------------------------------
+
+app.use('/api/notification-settings', notificationSettingsRoutes)
+app.use('/api/jobs', jobRoutes)
+app.use('/api/finance-settings', financeSettingsRoutes)
+app.use('/api/gateway', gatewayRoutes)
+app.use('/api/receipts', receiptRouter)
+app.use('/api/deposits', depositRouter)
+app.use('/api/employees', employeeRouter)
+app.use('/api/attendance', attendanceRouter)
+app.use('/api/payroll', payrollRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

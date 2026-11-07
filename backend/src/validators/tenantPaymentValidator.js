@@ -21,16 +21,13 @@ export const createTenantPaymentSchema =
     method: z
       .literal('UPI'),
 
+    // A UPI reference (UTR) is always 12 digits. GPay, PhonePe, Paytm and every bank show the same number.
     transactionReference: z
       .string()
       .trim()
-      .min(
-        1,
-        'Transaction reference is required for UPI payments'
-      )
-      .max(
-        100,
-        'Transaction reference cannot exceed 100 characters'
+      .regex(
+        /^\d{12}$/,
+        'Enter the 12 digit UPI reference number (UTR) from your payment app'
       ),
 
     paymentDate: z

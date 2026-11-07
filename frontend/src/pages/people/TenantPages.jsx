@@ -22,6 +22,7 @@ import { usePropertyStore } from '../../store/propertyStore'
 import { can } from '../../config/authz'
 import { PERMISSIONS } from '../../config/permissions'
 import { useAuthStore } from '../../store/authStore'
+import { DepositPanel } from './DepositPages'
 
 export function TenantListPage() {
   const user = useAuthStore((s) => s.user)
@@ -325,6 +326,7 @@ export function TenantDetailPage() {
           { id: 'stay', label: 'Stay' },
           { id: 'rent', label: 'Rent' },
           { id: 'payments', label: 'Payments' },
+          { id: 'deposit', label: 'Deposit' },
           { id: 'complaints', label: 'Complaints' },
         ]}
       />
@@ -383,6 +385,7 @@ export function TenantDetailPage() {
             ]}
           />
         ) : null}
+        {tab === 'deposit' && t ? <DepositPanel tenant={t} /> : null}
         {tab === 'complaints' ? (
           <DataTable
             rows={complaints.data || []}

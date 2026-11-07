@@ -93,6 +93,7 @@ export const paymentListQuerySchema = z.object({
     .enum([
       'CASH',
       'UPI',
+      'ONLINE',
     ])
     .optional(),
 
@@ -135,6 +136,6 @@ export const tenantPaymentHistoryQuerySchema = z.object({
     .optional(),
 
   method: z
-    .enum(['CASH', 'UPI'])
+    .enum(['CASH', 'UPI', 'ONLINE'])
     .optional(),
 })

@@ -72,6 +72,12 @@ const rentDueSchema = new mongoose.Schema(
       default: 'PENDING',
     },
 
+    // Late fee already added to `amount` by the daily job (so amount = rent + lateFee).
+    lateFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     notes: {
       type: String,
       trim: true,

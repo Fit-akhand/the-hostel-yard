@@ -24,6 +24,7 @@ export const NAV_GROUPS = [
       { to: '/tenants', label: 'Tenants', permission: PERMISSIONS.VIEW_TENANTS },
       { to: '/managers', label: 'Managers', roles: [ROLES.BUSINESS_OWNER] },
       { to: '/staff', label: 'Staff', permission: PERMISSIONS.VIEW_STAFF },
+      { to: '/employees', label: 'Employees', permission: PERMISSIONS.VIEW_STAFF },
     ],
   },
   {
@@ -31,6 +32,7 @@ export const NAV_GROUPS = [
     label: 'Operations',
     items: [
       { to: '/allocations', label: 'Allocations', permission: PERMISSIONS.VIEW_ALLOCATIONS },
+      { to: '/attendance', label: 'Attendance', permission: PERMISSIONS.VIEW_STAFF },
       { to: '/bookings', label: 'Bookings', permission: PERMISSIONS.VIEW_BOOKINGS },
       { to: '/complaints', label: 'Complaints', permission: PERMISSIONS.VIEW_COMPLAINTS },
       { to: '/announcements', label: 'Announcements', permission: PERMISSIONS.SEND_ANNOUNCEMENT, alsoRoles: [ROLES.BUSINESS_OWNER, ROLES.LANDLORD] },
@@ -42,14 +44,21 @@ export const NAV_GROUPS = [
     items: [
       { to: '/rent', label: 'Rent', permission: PERMISSIONS.VIEW_DUES },
       { to: '/payments', label: 'Payments', permission: PERMISSIONS.VIEW_PAYMENTS },
+      { to: '/reconcile', label: 'Bank matching', permission: PERMISSIONS.VERIFY_PAYMENTS },
       { to: '/expenses', label: 'Expenses', permission: PERMISSIONS.VIEW_EXPENSES },
+      { to: '/deposits', label: 'Deposits', roles: [ROLES.BUSINESS_OWNER] },
+      { to: '/payroll', label: 'Payroll', roles: [ROLES.BUSINESS_OWNER] },
+      { to: '/rent-rules', label: 'Rent rules', roles: [ROLES.BUSINESS_OWNER] },
       { to: '/payment-settings', label: 'Payment settings', permission: PERMISSIONS.VIEW_PAYMENT_SETTINGS, alsoRoles: [ROLES.BUSINESS_OWNER, ROLES.LANDLORD] },
     ],
   },
   {
     id: 'communication',
     label: 'Communication',
-    items: [{ to: '/notifications', label: 'Notifications' }],
+    items: [
+      { to: '/notifications', label: 'Notifications' },
+      { to: '/notification-settings', label: 'Reminders & alerts', roles: [ROLES.BUSINESS_OWNER] },
+    ],
   },
   {
     id: 'analytics',

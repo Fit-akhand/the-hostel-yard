@@ -258,3 +258,58 @@ export const reportApi = {
   tenants: async (params) => asArray(unwrap(await apiClient.get('/reports/tenants', { params })).data),
   bookings: async (params) => asArray(unwrap(await apiClient.get('/reports/bookings', { params })).data),
 }
+
+export const notificationSettingsApi = {
+  get: () => get('/notification-settings'),
+  update: (body) => mutate('put', '/notification-settings', body),
+  test: (body) => mutate('post', '/notification-settings/test', body),
+  runNow: () => mutate('post', '/notification-settings/run-now', {}),
+  logs: (limit = 50) => getList('/notification-settings/logs', { limit }, 'logs'),
+}
+
+export const employeeApi = {
+  list: (params) => getList('/employees', params, 'employees'),
+  get: (id) => get(`/employees/${id}`, undefined, 'employee'),
+  create: (body) => mutate('post', '/employees', body, 'employee'),
+  update: (id, body) => mutate('put', `/employees/${id}`, body, 'employee'),
+  setStatus: (id, body) => mutate('patch', `/employees/${id}/status`, body, 'employee'),
+}
+
+export const attendanceApi = {
+  sheet: (params) => getList('/attendance', params, 'sheet'),
+  save: (body) => mutate('put', '/attendance', body),
+  month: (params) => getList('/attendance/month', params, 'records'),
+}
+
+export const payrollApi = {
+  list: (params) => get('/payroll', params),
+  generate: (body) => mutate('post', '/payroll/generate', body),
+  get: (id) => get(`/payroll/${id}`, undefined, 'payroll'),
+  pay: (id, body) => mutate('post', `/payroll/${id}/pay`, body, 'payroll'),
+  adjustments: (params) => getList('/payroll/adjustments', params, 'adjustments'),
+  addAdjustment: (body) => mutate('post', '/payroll/adjustments', body, 'adjustment'),
+  removeAdjustment: (id) => apiClient.delete(`/payroll/adjustments/${id}`).then(unwrap),
+}
+
+export const receiptApi = {
+  get: (paymentId) => get(`/receipts/${paymentId}`, undefined, 'receipt'),
+}
+
+export const gatewayApi = {
+  config: () => get('/gateway/config'),
+  createOrder: (rentDueId) => mutate('post', '/gateway/orders', { rentDueId }),
+  confirm: (body) => mutate('post', '/gateway/confirm', body),
+}
+
+export const financeSettingsApi = {
+  get: () => get('/finance-settings', undefined, 'settings'),
+  update: (body) => mutate('put', '/finance-settings', body, 'settings'),
+}
+
+export const depositApi = {
+  list: (params) => getList('/deposits', params, 'deposits'),
+  forTenant: (tenantId) => get(`/deposits/tenant/${tenantId}`, undefined, 'deposit'),
+  save: (tenantId, body) => mutate('put', `/deposits/tenant/${tenantId}`, body, 'deposit'),
+  preview: (tenantId, deductions) => get(`/deposits/tenant/${tenantId}/preview`, { deductions: JSON.stringify(deductions) }),
+  settle: (tenantId, body) => mutate('post', `/deposits/tenant/${tenantId}/settle`, body, 'deposit'),
+}

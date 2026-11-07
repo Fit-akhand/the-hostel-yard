@@ -1,3 +1,4 @@
+import { sendInvitationMessage } from './eventMessaging.js'
 import bcrypt from 'bcryptjs'
 
 import Property from '../models/Property.js'
@@ -274,6 +275,8 @@ export const createStaffInvitation =
 
     const invitationLink =
       `${frontendUrl}/staff/activate/${token}`
+
+    await sendInvitationMessage({ organization: user.organization, property: property._id, name: staffName, role: 'a staff member', link: invitationLink, phone, email })
 
     return {
       invitationId:

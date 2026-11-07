@@ -6,6 +6,8 @@ import Tenant from '../models/Tenant.js'
 import PaymentSettings from '../models/PaymentSettings.js'
 import Allocation from '../models/Allocation.js'
 import User from '../models/User.js'
+import { notifyPaymentOutcome, notifyPaymentSubmitted } from './eventMessaging.js'
+import { nextReceiptNumber } from './receiptNumber.js'
 import {
   createNotification,
   createNotifications,
@@ -663,6 +665,8 @@ export const createTenantPayment = async ({
   )
 }
 
+await notifyPaymentSubmitted(payment)
+
 return payment
 }
 
@@ -1087,6 +1091,7 @@ export const verifyPayment = async ({
     payment.status = 'VERIFIED'
     payment.verifiedBy = user._id
     payment.verifiedAt = new Date()
+    payment.receiptNumber ??= await nextReceiptNumber(payment.organization, session)
 
     payment.rejectedBy = null
     payment.rejectedAt = null
@@ -1152,6 +1157,8 @@ try {
 }
 
     await session.commitTransaction()
+
+    await notifyPaymentOutcome(payment, 'VERIFIED')
 
     return payment
   } catch (error) {
@@ -1261,6 +1268,8 @@ try {
     error
   )
 }
+
+await notifyPaymentOutcome(payment, 'REJECTED')
 
 return payment
 }

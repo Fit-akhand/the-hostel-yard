@@ -40,7 +40,6 @@ export const createNotification =
     createdBy = null,
     session = null,
   }) => {
-    console.log('🔥 createNotifications FUNCTION CALLED')
     if (!recipient) {
       throw createError(
         'Notification recipient is required.',
@@ -134,14 +133,8 @@ export const createNotifications = async ({
   createdBy = null,
   session = null,
 }) => {
-  console.log('========== CREATE NOTIFICATIONS ==========')
-  console.log('recipients:', recipients)
-  console.log('organization:', organization)
-  console.log('property:', property)
-  console.log('type:', type)
 
   if (!Array.isArray(recipients) || !recipients.length) {
-    console.log('❌ RETURN: recipients empty')
     return []
   }
 
@@ -196,7 +189,6 @@ if (!users.length) {
     createdBy,
   }))
 
-  console.log('NOTIFICATIONS TO INSERT:', notifications)
 
   const result = await Notification.insertMany(
     notifications,
@@ -205,7 +197,6 @@ if (!users.length) {
     }
   )
 
-  console.log('✅ INSERT RESULT:', result)
 
   return result
 }

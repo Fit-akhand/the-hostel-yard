@@ -10,6 +10,7 @@ import StaffAssignment from '../models/StaffAssignment.js'
 import User from '../models/User.js'
 
 import { PERMISSIONS } from '../constants/permissions.js'
+import { notifyComplaintCreated, notifyComplaintStatus } from './eventMessaging.js'
 
 const createError = (message, statusCode) => {
   const error = new Error(message)
@@ -313,6 +314,8 @@ export const createComplaint = async ({
 
     createdBy: user._id,
   })
+
+  await notifyComplaintCreated(complaint)
 
   return complaint
 }
@@ -1141,6 +1144,8 @@ if (
 }
 
   await complaint.save()
+
+  if (status !== previousStatus) await notifyComplaintStatus(complaint)
 
   return complaint
 }

@@ -18,6 +18,16 @@ import Complaint from '../src/models/Complaint.js'
 import Announcement from '../src/models/Announcement.js'
 import Notification from '../src/models/Notification.js'
 import PropertyManagerAssignment from '../src/models/PropertyManagerAssignment.js'
+import Deposit from '../src/models/Deposit.js'
+import FinanceSettings from '../src/models/FinanceSettings.js'
+import Counter from '../src/models/Counter.js'
+import GatewayOrder from '../src/models/GatewayOrder.js'
+import { nextReceiptNumber } from '../src/services/receiptNumber.js'
+import Employee from '../src/models/Employee.js'
+import Attendance from '../src/models/Attendance.js'
+import PayrollAdjustment from '../src/models/PayrollAdjustment.js'
+import Payroll from '../src/models/Payroll.js'
+import { calculatePayroll } from '../src/services/payrollCalculator.js'
 import { MANAGER_ALLOWED_PERMISSIONS } from '../src/constants/managerPermissions.js'
 
 const uri = process.env.SEED_MONGODB_URI || 'mongodb://127.0.0.1:27017/hostel_yard_local'
@@ -35,7 +45,7 @@ const chance = (p) => rnd() < p
 const old = await Organization.findOne({ name: ORG_NAME })
 if (old) {
   const f = { organization: old._id }
-  for (const M of [Notification, Announcement, Complaint, Expense, Payment, PaymentSettings, RentDue, RentPlan, Allocation, Tenant, Bed, Room, PropertyManagerAssignment, Property]) await M.deleteMany(f)
+  for (const M of [GatewayOrder, Deposit, FinanceSettings, Counter, Payroll, PayrollAdjustment, Attendance, Employee, Notification, Announcement, Complaint, Expense, Payment, PaymentSettings, RentDue, RentPlan, Allocation, Tenant, Bed, Room, PropertyManagerAssignment, Property]) await M.deleteMany(f)
   await User.deleteMany({ organization: old._id, isDemo: true })
   await Organization.deleteOne({ _id: old._id })
   console.log('Removed previous demo organisation')
@@ -108,7 +118,8 @@ for (const x of allTenants) {
     if (current) { if (roll < 0.45) status = 'PAID'; else if (roll < 0.62) { status = 'PARTIAL'; paid = Math.round(x.rent / 2) } else if (roll < 0.9) { status = 'PENDING'; paid = 0 } else { status = 'OVERDUE'; paid = 0 } }
     else if (roll > 0.93) { status = 'PARTIAL'; paid = Math.round(x.rent / 2) }
     const base = { organization: org._id, property: x.prop._id }
-    const due = await RentDue.create({ ...base, tenant: x.t._id, allocation: x.alloc._id, rentPlan: x.plan._id, billingMonth: bm, dueDate, amount: x.rent, paidAmount: paid, status })
+    const lateFee = status === 'OVERDUE' ? 200 : 0
+    const due = await RentDue.create({ ...base, tenant: x.t._id, allocation: x.alloc._id, rentPlan: x.plan._id, billingMonth: bm, dueDate, amount: x.rent + lateFee, lateFee, paidAmount: paid, status })
     stats.dues++
     if (paid > 0) {
       const method = chance(0.75) ? 'UPI' : 'CASH'
@@ -117,6 +128,19 @@ for (const x of allTenants) {
       stats.payments++
     }
   }
+}
+
+// --- rent rules, receipt numbers, deposits -------------------------------------------------------
+await FinanceSettings.create({ organization: org._id, lateFee: { enabled: true, mode: 'FLAT', amount: 200, graceDays: 3, maxAmount: null } })
+for (const pay of await Payment.find({ organization: org._id, status: 'VERIFIED' }).sort({ paymentDate: 1 })) {
+  pay.receiptNumber = await nextReceiptNumber(org._id, null, pay.paymentDate)
+  await pay.save()
+}
+for (const [i, x] of allTenants.entries()) {
+  if (!chance(0.85)) continue
+  await Deposit.create({ organization: org._id, property: x.prop._id, tenant: x.t._id, amount: x.rent * (chance(0.5) ? 1 : 2), receivedOn: x.t.moveInDate.toISOString().slice(0, 10), method: pick(['CASH', 'UPI', 'BANK_TRANSFER']), recordedBy: owner._id })
+  // two tenants on notice, so the settlement screen has something to show
+  if (i === 7 || i === 23) await Tenant.collection.updateOne({ _id: x.t._id }, { $set: { status: 'NOTICE_PERIOD', noticeDate: new Date(), expectedMoveOutDate: new Date(now.getFullYear(), now.getMonth() + 1, 5) } })
 }
 
 // --- expenses, complaints, announcements --------------------------------------------------------
@@ -134,6 +158,54 @@ for (const [i, [title, category, priority]] of COMPLAINTS.entries()) {
 }
 for (const p of props) for (const [title, message, type] of [['Water supply maintenance', 'Water supply will be off on Sunday from 10 am to 2 pm.', 'MAINTENANCE'], ['Rent reminder', 'Please pay this month\'s rent by the 5th to avoid late fees.', 'PAYMENT'], ['Festival dinner', 'Special dinner on Saturday at 8 pm. Everyone is invited.', 'EVENT']])
   await Announcement.create({ organization: org._id, property: p._id, title, message, type, priority: 'MEDIUM', audience: 'PROPERTY_TENANTS', status: 'PUBLISHED', publishedAt: now, createdBy: owner._id })
+
+// --- employees, attendance and salaries ---------------------------------------------------------
+const STAFF = [['Ramesh Kumar', 'Cook', 'MONTHLY', 18000, 0], ['Sunita Devi', 'Cleaner', 'MONTHLY', 11000, 0], ['Mahesh Yadav', 'Security guard', 'MONTHLY', 14000, null], ['Kiran Rao', 'Warden', 'MONTHLY', 22000, 0], ['Raju', 'Helper', 'DAILY', 550, 0]]
+const pad2 = (n) => String(n).padStart(2, '0')
+const todayText = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
+const employees = []
+for (const p of props) {
+  for (const [name, designation, payType, salary, weeklyOff] of STAFF.slice(0, p.name.startsWith('Urban') ? 4 : 5)) {
+    employees.push(await Employee.create({ organization: org._id, property: p._id, name, phone: `90001${String(10000 + ++phoneSeq)}`, designation, payType, salary, weeklyOff, joinDate: '2026-01-05' }))
+  }
+}
+for (const e of employees) {
+  const ops = []
+  for (const bm of MONTHS) {
+    const [y, m] = bm.split('-').map(Number)
+    const dim = new Date(y, m, 0).getDate()
+    for (let d = 1; d <= dim; d++) {
+      const date = `${bm}-${pad2(d)}`
+      if (date > todayText) break
+      if (e.weeklyOff === new Date(y, m - 1, d).getDay()) continue
+      const roll = rnd()
+      const status = roll < 0.06 ? 'ABSENT' : roll < 0.09 ? 'HALF_DAY' : roll < 0.11 ? 'PAID_LEAVE' : 'PRESENT'
+      ops.push({ organization: org._id, property: e.property, employee: e._id, date, status, markedBy: owner._id })
+    }
+  }
+  await Attendance.insertMany(ops)
+}
+const mkAdj = (e, type, amount, date, reason) => PayrollAdjustment.create({ organization: org._id, property: e.property, employee: e._id, type, amount, date, month: date.slice(0, 7), reason, createdBy: owner._id })
+await mkAdj(employees[0], 'ADVANCE', 4000, `${MONTHS[2]}-02`, 'Family function')
+await mkAdj(employees[1], 'BONUS', 1000, `${MONTHS[1]}-20`, 'Festival bonus')
+await mkAdj(employees[2], 'DEDUCTION', 500, `${MONTHS[2]}-08`, 'Late three times')
+for (const [mi, bm] of MONTHS.entries()) {
+  const paid = mi < MONTHS.length - 1
+  for (const e of employees) {
+    const records = await Attendance.find({ employee: e._id, date: { $gte: `${bm}-01`, $lte: `${bm}-31` } }).lean()
+    const adjustments = await PayrollAdjustment.find({ employee: e._id, month: bm, type: { $in: ['BONUS', 'DEDUCTION'] } }).lean()
+    const open = paid ? [] : await PayrollAdjustment.find({ employee: e._id, type: 'ADVANCE', status: 'OPEN', month: { $lte: bm } }).lean()
+    const advanceBalance = open.reduce((t, a) => t + a.amount - a.recoveredAmount, 0)
+    const figures = calculatePayroll({ employee: e, month: bm, records, adjustments, advanceBalance })
+    let expense = null
+    if (paid) {
+      expense = await Expense.create({ organization: org._id, property: e.property, category: 'SALARY', amount: Math.max(1, Math.round(figures.netPay)), paymentMethod: 'BANK_TRANSFER', expenseDate: new Date(Number(bm.slice(0, 4)), Number(bm.slice(5)) - 1, 28), description: `Salary - ${e.name} - ${bm}`, recordedBy: owner._id })
+      await PayrollAdjustment.updateMany({ employee: e._id, month: bm, type: { $in: ['BONUS', 'DEDUCTION'] } }, { $set: { status: 'APPLIED' } })
+    }
+    await Payroll.create({ ...figures, organization: org._id, property: e.property, employee: e._id, month: bm, status: paid ? 'PAID' : 'DRAFT', ...(paid ? { paidOn: `${bm}-28`, paymentMethod: 'BANK_TRANSFER', expense: expense._id, paidBy: owner._id } : {}) })
+  }
+}
+stats.employees = employees.length
 
 // --- manager assignments ------------------------------------------------------------------------
 for (const p of props.slice(0, 2)) await PropertyManagerAssignment.create({ manager: manager._id, property: p._id, assignedBy: owner._id, permissions: [...new Set([...MANAGER_ALLOWED_PERMISSIONS, 'VIEW_DUES'])] })

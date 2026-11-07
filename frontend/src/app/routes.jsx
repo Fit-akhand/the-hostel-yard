@@ -55,6 +55,13 @@ import {
 } from '../pages/ops/OpsPages'
 import { ManagerPage, StaffDetailPage, StaffFormPage, StaffListPage } from '../pages/team/TeamPages'
 import { ReportsPage } from '../pages/reports/ReportsPage'
+import { AttendancePage, EmployeeDetailPage, EmployeeFormPage, EmployeeListPage } from '../pages/employees/EmployeePages'
+import { PayrollPage, PayslipPage } from '../pages/employees/PayrollPages'
+import { ReconcilePage } from '../pages/finance/ReconcilePage'
+import { ReceiptPage } from '../pages/finance/ReceiptPage'
+import { RentRulesPage } from '../pages/settings/RentRulesPage'
+import { DepositListPage, SettlementPage } from '../pages/people/DepositPages'
+import { NotificationSettingsPage } from '../pages/settings/NotificationSettingsPage'
 import {
   TenantAnnouncementsPage,
   TenantComplaintsPage,
@@ -125,6 +132,26 @@ export function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/organization" element={<OrganizationPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route element={<RoleRoute roles={[ROLES.BUSINESS_OWNER]} />}>
+              <Route path="/notification-settings" element={<NotificationSettingsPage />} />
+              <Route path="/employees/new" element={<EmployeeFormPage mode="create" />} />
+              <Route path="/employees/:id/edit" element={<EmployeeFormPage mode="edit" />} />
+              <Route path="/rent-rules" element={<RentRulesPage />} />
+              <Route path="/deposits" element={<DepositListPage />} />
+              <Route path="/payroll" element={<PayrollPage />} />
+              <Route path="/payroll/:id" element={<PayslipPage />} />
+            </Route>
+            <Route element={<RoleRoute permission={PERMISSIONS.VERIFY_PAYMENTS} />}>
+              <Route path="/reconcile" element={<ReconcilePage />} />
+            </Route>
+            <Route element={<RoleRoute permission={PERMISSIONS.VIEW_PAYMENTS} />}>
+              <Route path="/receipts/:paymentId" element={<ReceiptPage />} />
+            </Route>
+            <Route element={<RoleRoute permission={PERMISSIONS.VIEW_STAFF} />}>
+              <Route path="/employees" element={<EmployeeListPage />} />
+              <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+              <Route path="/attendance" element={<AttendancePage />} />
+            </Route>
             <Route path="/notifications" element={<NotificationPage />} />
             <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
 
@@ -150,6 +177,7 @@ export function AppRoutes() {
               <Route path="/tenants/new" element={<TenantFormPage mode="create" />} />
               <Route path="/tenants/:tenantId" element={<TenantDetailPage />} />
               <Route path="/tenants/:tenantId/edit" element={<TenantFormPage mode="edit" />} />
+              <Route path="/tenants/:tenantId/settlement" element={<SettlementPage />} />
             </Route>
 
             <Route element={<RoleRoute permission={PERMISSIONS.VIEW_ALLOCATIONS} />}>
@@ -213,6 +241,7 @@ export function AppRoutes() {
             <Route path="/tenant/stay" element={<TenantStayPage />} />
             <Route path="/tenant/rent" element={<TenantRentPage />} />
             <Route path="/tenant/payments" element={<TenantPaymentsPage />} />
+            <Route path="/tenant/receipts/:paymentId" element={<ReceiptPage />} />
             <Route path="/tenant/complaints" element={<TenantComplaintsPage />} />
             <Route path="/tenant/announcements" element={<TenantAnnouncementsPage />} />
             <Route path="/tenant/notifications" element={<TenantNotificationsPage />} />

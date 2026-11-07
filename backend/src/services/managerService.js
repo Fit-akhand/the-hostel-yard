@@ -1,3 +1,4 @@
+import { sendInvitationMessage } from './eventMessaging.js'
 import ManagerInvitation from '../models/ManagerInvitation.js'
 import Property from '../models/Property.js'
 import User from '../models/User.js'
@@ -125,6 +126,8 @@ export const createManagerInvitation = async ({
 
   const invitationLink =
     `${frontendUrl}/manager/activate/${token}`
+
+  await sendInvitationMessage({ organization: user.organization, property: property._id, name: managerName, role: 'a property manager', link: invitationLink, phone, email })
 
   return {
     invitationId: invitation._id,

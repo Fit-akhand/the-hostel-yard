@@ -1,19 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-
   "services": {
     "frontend": {
       "root": "frontend/",
       "framework": "vite"
     },
-
     "backend": {
       "root": "backend/",
       "framework": "express",
       "entrypoint": "src/server.js"
     }
   },
-
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -26,6 +23,12 @@
       "destination": {
         "service": "frontend"
       }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/jobs/daily",
+      "schedule": "30 3 * * *"
     }
   ]
 }

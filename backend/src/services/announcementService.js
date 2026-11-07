@@ -9,6 +9,7 @@ import PropertyManagerAssignment from '../models/PropertyManagerAssignment.js'
 import { PERMISSIONS } from '../constants/permissions.js'
 import { announcementListQuerySchema } from '../validators/announcementValidator.js'
 import { createNotifications } from './notificationService.js'
+import { notifyAnnouncementExternal } from './eventMessaging.js'
 
 // --------------------------------------------------
 // ERROR HELPER
@@ -1059,6 +1060,9 @@ export const cancelAnnouncement =
     if (!tenantIds.length) {
       return []
     }
+
+    // WhatsApp / SMS / e-mail go to every tenant, including those without an app account.
+    await notifyAnnouncementExternal(announcement, tenantIds)
 
     const tenants =
       await Tenant.find({

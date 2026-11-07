@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import OTPVerification from '../models/OTPVerification.js'
+import { sendOtpMessage } from '../messaging/messenger.js'
 
 const OTP_EXPIRY_MINUTES = 5
 const MAX_OTP_ATTEMPTS = 5
@@ -12,15 +13,6 @@ const generateOtp = () => {
 
 const hashOtp = async (otp) => {
   return bcrypt.hash(otp, 10)
-}
-
-const sendDevelopmentOtp = (identifier, otp) => {
-  console.log('----------------------------------------')
-  console.log('THE HOSTEL YARD - DEVELOPMENT OTP')
-  console.log(`Identifier: ${identifier}`)
-  console.log(`OTP: ${otp}`)
-  console.log(`Expires in: ${OTP_EXPIRY_MINUTES} minutes`)
-  console.log('----------------------------------------')
 }
 
 export const createOtp = async ({
@@ -69,9 +61,7 @@ export const createOtp = async ({
     expiresAt,
   })
 
-  // Development only.
-  // Later this will call the real SMS provider.
-  sendDevelopmentOtp(normalizedIdentifier, otp)
+  await sendOtpMessage(normalizedIdentifier, otp, OTP_EXPIRY_MINUTES)
 
   return {
     expiresIn: OTP_EXPIRY_MINUTES * 60,
