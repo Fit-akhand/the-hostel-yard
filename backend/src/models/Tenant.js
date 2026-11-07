@@ -16,13 +16,12 @@ const tenantSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Left out entirely until the tenant accepts an invitation. It must never be stored as null: a unique
+    // index treats null as a value, so a second tenant without an account would be rejected.
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      default: null,
-      unique: true,
-      sparse: true,
-      index: true,
+      default: undefined,
     },
 
     name: {
@@ -122,6 +121,16 @@ tenantSchema.index({
   property: 1,
   phone: 1,
 })
+
+// One account per tenant, checked only for tenants that have one.
+tenantSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    name: 'user_linked_unique',
+    partialFilterExpression: { user: { $type: 'objectId' } },
+  }
+)
 
 const Tenant = mongoose.model(
   'Tenant',

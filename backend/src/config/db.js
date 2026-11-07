@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { env } from './env.js'
+import { healTenantUserIndex } from './migrations.js'
 
 export const connectDB = async () => {
   if (!env.mongodbUri) {
@@ -19,6 +20,12 @@ export const connectDB = async () => {
     const connection = await mongoose.connect(env.mongodbUri)
 
     console.log(`MongoDB connected: ${connection.connection.host}`)
+
+    try {
+      await healTenantUserIndex()
+    } catch (error) {
+      console.error('Could not repair the tenant index:', error.message)
+    }
 
     return connection
   } catch (error) {
