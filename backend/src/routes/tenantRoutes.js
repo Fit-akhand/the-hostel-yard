@@ -13,6 +13,7 @@ import {
   startTenantNotice,
   moveOutTenant,
 } from '../controllers/tenantController.js'
+import { cancelTenantNotice } from '../services/tenantService.js'
 
 import {
   protect,
@@ -36,8 +37,12 @@ import {
 import {
   acceptTenantInvitationSchema,
 } from '../validators/tenantAccountValidator.js'
+import { rateLimit, MINUTE } from '../middlewares/rateLimit.js'
 
 const router = express.Router()
+
+// Public links: limited per network so invitation tokens cannot be guessed at speed.
+const activationLimit = rateLimit({ name: 'activate-ip', windowMs: 15 * MINUTE, max: 20 })
 
 // --------------------------------------------------
 // INVITE TENANT
@@ -58,6 +63,7 @@ router.post(
 
 router.post(
   '/accept-invitation',
+  activationLimit,
   validate(
     acceptTenantInvitationSchema
   ),
@@ -127,6 +133,22 @@ router.post(
   ),
   validate(tenantNoticeSchema),
   startTenantNotice
+)
+
+router.post(
+  '/:tenantId/notice/cancel',
+  protect,
+  validateParams(
+    tenantIdParamSchema
+  ),
+  async (req, res, next) => {
+    try {
+      const tenant = await cancelTenantNotice({ user: req.user, tenantId: req.params.tenantId })
+      res.status(200).json({ success: true, message: 'Notice withdrawn. The tenant is staying on.', data: { tenant } })
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 // --------------------------------------------------

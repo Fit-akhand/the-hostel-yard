@@ -45,6 +45,16 @@ const notificationSchema = new mongoose.Schema(
         'RENT_OVERDUE',
         'DAILY_DIGEST',
 
+        'MOVE_OUT_NOTICE',
+        'ENQUIRY_NEW',
+        'FOOD_MENU_UPDATED',
+        'KYC_SUBMITTED',
+        'KYC_REVIEWED',
+        'DOCUMENT_TO_SIGN',
+        'DOCUMENT_SIGNED',
+        'GUEST_REQUEST',
+        'GUEST_DECIDED',
+
         'GENERAL',
       ],
       default: 'GENERAL',

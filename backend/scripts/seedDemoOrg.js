@@ -29,6 +29,16 @@ import PayrollAdjustment from '../src/models/PayrollAdjustment.js'
 import Payroll from '../src/models/Payroll.js'
 import { calculatePayroll } from '../src/services/payrollCalculator.js'
 import { MANAGER_ALLOWED_PERMISSIONS } from '../src/constants/managerPermissions.js'
+import DocumentTemplate from '../src/models/DocumentTemplate.js'
+import Enquiry from '../src/models/Enquiry.js'
+import FoodMenu from '../src/models/FoodMenu.js'
+import GuestPass from '../src/models/GuestPass.js'
+import MessageLog from '../src/models/MessageLog.js'
+import PropertyListing from '../src/models/PropertyListing.js'
+import SignedDocument from '../src/models/SignedDocument.js'
+import StoredFile from '../src/models/StoredFile.js'
+import TenantLink from '../src/models/TenantLink.js'
+import { seedExtras } from './seedDemoExtras.js'
 
 const uri = process.env.SEED_MONGODB_URI || 'mongodb://127.0.0.1:27017/hostel_yard_local'
 const ORG_NAME = 'The Hostel Yard Demo'
@@ -45,7 +55,7 @@ const chance = (p) => rnd() < p
 const old = await Organization.findOne({ name: ORG_NAME })
 if (old) {
   const f = { organization: old._id }
-  for (const M of [GatewayOrder, Deposit, FinanceSettings, Counter, Payroll, PayrollAdjustment, Attendance, Employee, Notification, Announcement, Complaint, Expense, Payment, PaymentSettings, RentDue, RentPlan, Allocation, Tenant, Bed, Room, PropertyManagerAssignment, Property]) await M.deleteMany(f)
+  for (const M of [DocumentTemplate, Enquiry, FoodMenu, GuestPass, MessageLog, PropertyListing, SignedDocument, StoredFile, TenantLink, GatewayOrder, Deposit, FinanceSettings, Counter, Payroll, PayrollAdjustment, Attendance, Employee, Notification, Announcement, Complaint, Expense, Payment, PaymentSettings, RentDue, RentPlan, Allocation, Tenant, Bed, Room, PropertyManagerAssignment, Property]) await M.deleteMany(f)
   await User.deleteMany({ organization: old._id, isDemo: true })
   await Organization.deleteOne({ _id: old._id })
   console.log('Removed previous demo organisation')
@@ -223,5 +233,9 @@ for (const [title, message, type] of [['Rent due soon', `Your rent for ${MONTHS[
 for (const [title, message, type] of [['Payment received', 'A new UPI payment is waiting for verification.', 'PAYMENT_RECEIVED'], ['New complaint', 'A tenant raised a complaint: Wi-Fi is slow.', 'COMPLAINT_CREATED']])
   for (const u of [owner, manager]) await Notification.create({ organization: org._id, recipient: u._id, type, title, message })
 
+Object.assign(stats, await seedExtras({ org, owner, props, allTenants, demoTenant: pick1 }))
+
 console.log('Done', stats, { demoUsers: ['owner@demo.thehostelyard.app', 'manager@demo.thehostelyard.app', 'tenant@demo.thehostelyard.app'] })
+// Let background notifications finish before closing the connection.
+await new Promise((resolve) => setTimeout(resolve, 1500))
 await mongoose.disconnect()

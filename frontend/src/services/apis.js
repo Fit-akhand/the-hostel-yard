@@ -48,6 +48,7 @@ export const tenantApi = {
   notice: (id, body) => mutate('post', `/tenants/${id}/notice`, body, 'tenant'),
   moveOut: (id, body) => mutate('post', `/tenants/${id}/move-out`, body, 'tenant'),
   invite: (id) => mutate('post', `/tenants/${id}/invite`, {}, 'invitationLink'),
+  cancelNotice: (id) => mutate('post', `/tenants/${id}/notice/cancel`, {}, 'tenant'),
   acceptInvite: (body) => apiClient.post('/tenants/accept-invitation', body).then(unwrap),
 }
 
@@ -320,4 +321,113 @@ export const depositApi = {
   save: (tenantId, body) => mutate('put', `/deposits/tenant/${tenantId}`, body, 'deposit'),
   preview: (tenantId, deductions) => get(`/deposits/tenant/${tenantId}/preview`, { deductions: JSON.stringify(deductions) }),
   settle: (tenantId, body) => mutate('post', `/deposits/tenant/${tenantId}/settle`, body, 'deposit'),
+}
+
+// Uploads one file with its kind. The browser sets the multipart boundary itself.
+const upload = async (url, kind, file) => {
+  const form = new FormData()
+  form.append('kind', kind)
+  form.append('file', file)
+  return pickData(unwrap(await apiClient.post(url, form, { headers: { 'Content-Type': undefined }, timeout: 60000 })))
+}
+
+export const kycApi = {
+  get: (tenantId) => get(`/tenants/${tenantId}/kyc`),
+  save: (tenantId, body) => mutate('put', `/tenants/${tenantId}/kyc`, body),
+  upload: (tenantId, kind, file) => upload(`/tenants/${tenantId}/kyc/documents`, kind, file),
+  remove: (tenantId, docId) => apiClient.delete(`/tenants/${tenantId}/kyc/documents/${docId}`).then((r) => pickData(unwrap(r))),
+  fileUrl: (tenantId, docId) => `${apiClient.defaults.baseURL}/tenants/${tenantId}/kyc/documents/${docId}/file`,
+  review: (tenantId, body) => mutate('post', `/tenants/${tenantId}/kyc/review`, body),
+  police: (tenantId, body) => mutate('put', `/tenants/${tenantId}/kyc/police`, body),
+  link: (tenantId, body = {}) => mutate('post', `/tenants/${tenantId}/link`, body),
+  previewAgreement: (tenantId, terms) => mutate('post', `/tenants/${tenantId}/agreement/preview`, terms ? { terms } : {}),
+  createAgreement: (tenantId, terms) => mutate('post', `/tenants/${tenantId}/agreement`, { terms }),
+}
+
+export const documentApi = {
+  list: (params) => getList('/documents', params),
+  summary: () => get('/documents/summary'),
+  get: (id) => get(`/documents/${id}`),
+  countersign: (id, body) => mutate('post', `/documents/${id}/countersign`, body),
+  cancel: (id, reason) => mutate('post', `/documents/${id}/cancel`, { reason }),
+}
+
+export const templateApi = {
+  get: (kind) => get(`/document-templates/${kind}`),
+  save: (kind, body) => mutate('put', `/document-templates/${kind}`, body),
+  reset: (kind) => apiClient.delete(`/document-templates/${kind}`).then((r) => pickData(unwrap(r))),
+}
+
+export const foodMenuApi = {
+  get: (propertyId) => get(`/food-menu/${propertyId}`),
+  save: (propertyId, body) => mutate('put', `/food-menu/${propertyId}`, body),
+}
+
+export const enquiryApi = {
+  list: (params) => get('/enquiries', params),
+  get: (id) => get(`/enquiries/${id}`),
+  create: (body) => mutate('post', '/enquiries', body),
+  update: (id, body) => mutate('patch', `/enquiries/${id}`, body),
+}
+
+export const listingApi = {
+  list: () => get('/listings'),
+  save: (propertyId, body) => mutate('put', `/listings/${propertyId}`, body),
+}
+
+// Signed-in resident (tenant portal).
+export const residentApi = {
+  tenancy: () => get('/me/tenancy'),
+  giveNotice: (body) => mutate('post', '/me/notice', body),
+  withdrawNotice: () => mutate('post', '/me/notice/withdraw', {}),
+  foodMenu: () => get('/me/food-menu'),
+}
+
+// Resident form and documents: the same calls for the tenant portal (/me) and for a private link
+// (/public/resident/:token).
+export const residentDocsApi = (base) => ({
+  base,
+  profile: () => get(`${base}/profile`),
+  save: (body) => mutate('put', `${base}/kyc`, body),
+  upload: (kind, file) => upload(`${base}/kyc/documents`, kind, file),
+  remove: (docId) => apiClient.delete(`${base}/kyc/documents/${docId}`).then((r) => pickData(unwrap(r))),
+  fileUrl: (docId) => `${apiClient.defaults.baseURL}${base}/kyc/documents/${docId}/file`,
+  submit: (body) => mutate('post', `${base}/kyc/submit`, body),
+  document: (docId) => get(`${base}/documents/${docId}`),
+  sign: (docId, body) => mutate('post', `${base}/documents/${docId}/sign`, body),
+})
+
+export const publicApi = {
+  organization: (orgSlug) => get(`/public/stays/${orgSlug}`),
+  property: (orgSlug, slug) => get(`/public/stays/${orgSlug}/${slug}`),
+  enquire: (orgSlug, slug, body) => mutate('post', `/public/stays/${orgSlug}/${slug}/enquiries`, body),
+}
+
+// Guest passes at the gate (owner, manager, staff).
+export const guestPassApi = {
+  list: (params) => get('/guest-passes', params),
+  createAtGate: (body) => mutate('post', '/guest-passes', body),
+  verify: (code) => mutate('post', '/guest-passes/verify', { code }),
+  gate: (propertyId) => get(`/guest-passes/gate/${propertyId}`),
+  resetGate: (propertyId) => mutate('post', `/guest-passes/gate/${propertyId}/reset`, {}),
+  checkIn: (id) => mutate('post', `/guest-passes/${id}/check-in`, {}),
+  checkOut: (id) => mutate('post', `/guest-passes/${id}/check-out`, {}),
+  cancel: (id) => mutate('post', `/guest-passes/${id}/cancel`, {}),
+}
+
+// A signed-in resident's own guests.
+export const myGuestApi = {
+  list: () => get('/me/guests'),
+  invite: (body) => mutate('post', '/me/guests', body),
+  decide: (id, body) => mutate('post', `/me/guests/${id}/decision`, body),
+  cancel: (id) => mutate('post', `/me/guests/${id}/cancel`, {}),
+}
+
+// No sign-in: the gate QR form, the visitor's pass and the resident's approval link.
+export const publicGuestApi = {
+  gate: (code) => get(`/public/visit/${code}`),
+  request: (code, body) => mutate('post', `/public/visit/${code}`, body),
+  pass: (token) => get(`/public/pass/${token}`),
+  approval: (token) => get(`/public/approve/${token}`),
+  decide: (token, body) => mutate('post', `/public/approve/${token}`, body),
 }

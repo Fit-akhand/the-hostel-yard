@@ -19,7 +19,8 @@ const typeEnabled = (settings, type) => {
 // Sends one message (WhatsApp / SMS / e-mail, whichever the organisation switched on) to one person.
 // `to` is { phone, email }. `dedupeKey` makes a repeat call for the same event a no-op.
 // Failures are logged, never thrown, so a messaging problem cannot break the action that triggered it.
-export const deliver = async ({ organization, property = null, tenant = null, user = null, type, vars = {}, to, dedupeKey = null, force = [] }) => {
+// `redact` lists private values (such as one-time links) that are sent but kept out of the message log.
+export const deliver = async ({ organization, property = null, tenant = null, user = null, type, vars = {}, to, dedupeKey = null, force = [], redact = [] }) => {
   const results = []
   try {
     const settings = await getSettings(organization)
@@ -37,7 +38,7 @@ export const deliver = async ({ organization, property = null, tenant = null, us
       try {
         await MessageLog.create({
           organization, property, tenant, user, type, channel,
-          to: result.to || address || null, body,
+          to: result.to || address || null, body: redact.reduce((text, secret) => (secret ? text.split(secret).join('(private link)') : text), body),
           status: result.status, providerId: result.providerId || null, error: result.error || null,
           dedupeKey: key,
         })

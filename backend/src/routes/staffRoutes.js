@@ -26,9 +26,13 @@ import {
   staffListQuerySchema,
   activateStaffSchema,
 } from '../validators/staffValidator.js'
+import { rateLimit, MINUTE } from '../middlewares/rateLimit.js'
 
 const router =
   express.Router()
+
+// Public links: limited per network so invitation tokens cannot be guessed at speed.
+const activationLimit = rateLimit({ name: 'activate-ip', windowMs: 15 * MINUTE, max: 20 })
 
 
 /*
@@ -39,11 +43,13 @@ const router =
 
 router.get(
   '/invitations/:token',
+  activationLimit,
   getStaffInvitationDetails
 )
 
 router.post(
   '/invitations/activate',
+  activationLimit,
   validate(activateStaffSchema),
   activateStaffAccount
 )

@@ -7,6 +7,8 @@ import {
   forgotPassword as forgotPasswordService,
   resetPassword as resetPasswordService,
 } from '../services/authService.js'
+import { loginBlockedUntil, recordLoginFailure, clearLoginFailures } from '../services/loginGuard.js'
+import { describeWait, secondsUntil, tooManyRequests } from '../middlewares/rateLimit.js'
 
 export const setupOwner = async (req, res, next) => {
   try {
@@ -40,8 +42,28 @@ export const verifyOwnerSetup = async (req, res, next) => {
 }
 
 export const login = async (req, res, next) => {
+  const guard = { identifier: req.body.identifier, ip: req.ip }
+
   try {
-    const result = await loginUser(req.body)
+    const blockedUntil = await loginBlockedUntil(guard)
+    if (blockedUntil) {
+      const wait = secondsUntil(blockedUntil)
+      return tooManyRequests(
+        res,
+        wait,
+        `Too many wrong passwords. Try again in ${describeWait(wait)}, or use "Forgot password" to set a new one.`
+      )
+    }
+
+    let result
+    try {
+      result = await loginUser(req.body)
+    } catch (error) {
+      if (error.statusCode === 401) await recordLoginFailure(guard)
+      throw error
+    }
+
+    await clearLoginFailures(guard)
 
     res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
@@ -128,19 +150,17 @@ export const forgotPassword = async (
   next
 ) => {
   try {
-    const result =
-      await forgotPasswordService({
-        email: req.body.email,
-      })
+    await forgotPasswordService({
+      email: req.body.email,
+    })
 
-    // Always return the same response,
-    // whether the email exists or not.
+    // Always the same answer, whether the email belongs to an account or not. The link itself only ever
+    // goes to the account's email address.
     res.status(200).json({
-  success: true,
-  message:
-    'If an account exists with this email, a password reset link has been sent.',
-  data: result || undefined,
-})
+      success: true,
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    })
   } catch (error) {
     next(error)
   }

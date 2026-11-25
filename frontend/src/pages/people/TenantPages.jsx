@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  allocationApi,
-  bedApi,
-  complaintApi,
-  paymentApi,
-  propertyApi,
-  rentApi,
-  roomApi,
-  tenantApi,
-} from '../../services/apis'
+import { allocationApi, bedApi, complaintApi, paymentApi, propertyApi, rentApi, roomApi, tenantApi, enquiryApi } from '../../services/apis'
 import { Button, Card, Field, Input, PageHeader, Select, StatusBadge, Tabs, Textarea } from '../../components/ui'
 import { DataTable } from '../../components/tables/DataTable'
-import { ConfirmDialog, Modal } from '../../components/modals/Modal'
+import { Modal } from '../../components/modals/Modal'
 import { toast } from '../../store/toastStore'
 import { fieldErrors } from '../../services/apiClient'
 import { formatDate, formatINR, nameOf, toInputDate } from '../../utils/format'
@@ -25,6 +16,7 @@ import { useAuthStore } from '../../store/authStore'
 import { InviteShare } from '../../components/ui/InviteShare'
 import { DepositPanel } from './DepositPages'
 import { TenantProfile } from './TenantProfile'
+import { KycPanel } from '../kyc/KycPanel'
 
 export function TenantListPage() {
   const user = useAuthStore((s) => s.user)
@@ -95,12 +87,14 @@ export function TenantFormPage({ mode }) {
     enabled: mode === 'edit',
   })
   const currentPropertyId = usePropertyStore((s) => s.currentPropertyId)
+  // "Add as tenant" on an enquiry arrives with the details already known.
+  const [preset] = useSearchParams()
   const [form, setForm] = useState({
-    propertyId: currentPropertyId || '',
-    name: '',
-    phone: '',
-    email: '',
-    gender: 'MALE',
+    propertyId: preset.get('propertyId') || currentPropertyId || '',
+    name: preset.get('name') || '',
+    phone: preset.get('phone') || '',
+    email: preset.get('email') || '',
+    gender: preset.get('gender') || 'MALE',
     address: '',
     moveInDate: toInputDate(new Date()),
     emergencyName: '',
@@ -147,6 +141,8 @@ export function TenantFormPage({ mode }) {
     },
     onSuccess: (tenant) => {
       if (mode === 'create') {
+        const enquiryId = preset.get('enquiryId')
+        if (enquiryId) enquiryApi.update(enquiryId, { tenantId: tenant._id }).catch(() => toast.warning('The enquiry could not be marked as joined.'))
         toast.success('Tenant created. Now allocate a bed.')
         navigate(`/allocations/new?tenantId=${tenant._id}&propertyId=${form.propertyId}`)
         return
@@ -233,7 +229,8 @@ export function TenantDetailPage() {
   const { tenantId } = useParams()
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const [tab, setTab] = useState('overview')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState(searchParams.get('tab') || 'overview')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteLink, setInviteLink] = useState('')
   const [noticeOpen, setNoticeOpen] = useState(false)
@@ -275,12 +272,19 @@ export function TenantDetailPage() {
     },
     onError: (e) => toast.error(e.message),
   })
+  const cancelNotice = useMutation({
+    mutationFn: () => tenantApi.cancelNotice(tenantId),
+    onSuccess: () => { toast.success('Notice withdrawn. The tenant is staying on.'); qc.invalidateQueries({ queryKey: ['tenant', tenantId] }) },
+    onError: (e) => toast.error(e.message),
+  })
   const moveOut = useMutation({
     mutationFn: () => tenantApi.moveOut(tenantId, { actualMoveOutDate: moveDate }),
     onSuccess: () => {
-      toast.success('Tenant moved out.')
+      toast.success('Tenant moved out. The bed is free and monthly rent has stopped.')
       setMoveOpen(false)
       qc.invalidateQueries({ queryKey: ['tenant', tenantId] })
+      qc.invalidateQueries({ queryKey: ['allocations'] })
+      qc.invalidateQueries({ queryKey: ['rent-plans'] })
     },
     onError: (e) => toast.error(e.message),
   })
@@ -305,6 +309,11 @@ export function TenantDetailPage() {
             {t?.status === 'ACTIVE' ? (
               <Button variant="secondary" onClick={() => setNoticeOpen(true)}>
                 Start notice
+              </Button>
+            ) : null}
+            {t?.status === 'NOTICE_PERIOD' ? (
+              <Button variant="secondary" loading={cancelNotice.isPending} onClick={() => cancelNotice.mutate()}>
+                Cancel notice
               </Button>
             ) : null}
             {t?.status !== 'LEFT' ? (
@@ -332,6 +341,7 @@ export function TenantDetailPage() {
           { id: 'rent', label: 'Rent' },
           { id: 'payments', label: 'Payments' },
           { id: 'deposit', label: 'Deposit' },
+          { id: 'kyc', label: 'KYC & agreement' },
           { id: 'complaints', label: 'Complaints' },
         ]}
       />
@@ -378,6 +388,7 @@ export function TenantDetailPage() {
           />
         ) : null}
         {tab === 'deposit' && t ? <DepositPanel tenant={t} /> : null}
+        {tab === 'kyc' && t ? <KycPanel tenant={t} /> : null}
         {tab === 'complaints' ? (
           <DataTable
             rows={complaints.data || []}
@@ -428,23 +439,24 @@ export function TenantDetailPage() {
           <Input type="date" value={noticeDate} onChange={(e) => setNoticeDate(e.target.value)} />
         </Field>
       </Modal>
-      <ConfirmDialog
+      <Modal
         open={moveOpen}
         title="Move this tenant out?"
-        description="This ends the tenancy. Allocations may also need to be ended separately."
-        danger
-        confirmLabel="Move out"
-        loading={moveOut.isPending}
         onClose={() => setMoveOpen(false)}
-        onConfirm={() => moveOut.mutate()}
-      />
-      {moveOpen ? (
-        <div className="mt-2 max-w-xs">
-          <Field label="Actual move-out date">
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setMoveOpen(false)}>Cancel</Button>
+            <Button variant="danger" loading={moveOut.isPending} onClick={() => moveOut.mutate()}>Move out</Button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <p className="text-sm text-ink-600">This ends the stay, frees the bed and stops monthly rent. Unpaid dues stay on record; settle the deposit from the Deposit tab.</p>
+          <Field label="Move-out date" required>
             <Input type="date" value={moveDate} onChange={(e) => setMoveDate(e.target.value)} />
           </Field>
         </div>
-      ) : null}
+      </Modal>
     </div>
   )
 }

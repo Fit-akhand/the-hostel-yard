@@ -1,5 +1,9 @@
 import { v2 as cloudinary } from 'cloudinary'
 
+// Loads .env first: this file is imported long before the server's own config, and the keys must be
+// in place when the SDK is configured.
+import './env.js'
+
 cloudinary.config({
   cloud_name:
     process.env.CLOUDINARY_CLOUD_NAME,

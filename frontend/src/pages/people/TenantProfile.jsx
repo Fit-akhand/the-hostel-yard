@@ -73,6 +73,7 @@ export function TenantProfile({ tenant: t, active, dues, payments, complaints, o
             </Field>
             <Field label="E-mail">{dash(t.email)}</Field>
             <Field label="Address">{dash(t.address)}</Field>
+            <Field label="KYC"><button type="button" onClick={() => onTab('kyc')} className="inline-flex items-center gap-2 hover:underline"><StatusBadge status={t.kyc?.status || 'NOT_STARTED'} /></button></Field>
             <Field label="App account">{t.user ? <Badge tone="success">Linked</Badge> : <Badge>Not invited</Badge>}</Field>
             <Field label="Emergency contact">
               {t.emergencyContact?.name ? `${t.emergencyContact.name}${t.emergencyContact.relationship ? ` (${t.emergencyContact.relationship})` : ''}` : '—'}
@@ -91,9 +92,10 @@ export function TenantProfile({ tenant: t, active, dues, payments, complaints, o
             <Field label="Room type">{dash(active?.room?.type)}</Field>
             <Field label="In this bed since">{active ? formatDate(active.startDate) : '—'}</Field>
             <Field label="Moved in">{formatDate(t.moveInDate)}</Field>
-            <Field label="Notice given on">{t.noticeDate ? formatDate(t.noticeDate) : '—'}</Field>
+            <Field label="Notice given on">{t.noticeDate ? `${formatDate(t.noticeDate)}${t.noticeGivenBy === 'TENANT' ? ' (by the resident, in the app)' : ''}` : '—'}</Field>
             <Field label="Expected move-out">{t.expectedMoveOutDate ? formatDate(t.expectedMoveOutDate) : '—'}</Field>
             <Field label="Moved out on">{t.actualMoveOutDate ? formatDate(t.actualMoveOutDate) : '—'}</Field>
+            {t.moveOutReason ? <Field label="Reason for leaving">{t.moveOutReason}</Field> : null}
           </div>
         </Section>
       </div>

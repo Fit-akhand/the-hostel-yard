@@ -52,3 +52,29 @@ export const sendOtpMessage = async (identifier, otp, expiresInMinutes) => {
 
   return result
 }
+
+// Password reset links. Sent by e-mail only. Without a working e-mail provider the link is written to the
+// server log outside production, so local testing still works; it is never sent back to the browser.
+export const sendPasswordResetMessage = async ({ email, name, resetUrl, expiresInMinutes }) => {
+  const firstName = String(name || '').trim().split(/\s+/)[0] || 'there'
+  const body = [
+    `Hi ${firstName},`,
+    '',
+    'We received a request to reset your The Hostel Yard password. Open this link to choose a new one:',
+    resetUrl,
+    '',
+    `The link works once and expires in ${expiresInMinutes} minutes. If you did not ask for this, ignore this e-mail: your password stays the same.`,
+  ].join('\n')
+
+  const result = await sendOnChannel({ channel: 'EMAIL', to: email, subject: 'Reset your password', body })
+
+  if (result.status !== 'SENT') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[password-reset] ${email}: ${resetUrl} - delivery: ${result.status}${result.error ? ` (${result.error})` : ''}`)
+    } else {
+      console.error(`[password-reset] could not e-mail the reset link: ${result.status}${result.error ? ` (${result.error})` : ''}`)
+    }
+  }
+
+  return result
+}

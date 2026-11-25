@@ -26,6 +26,14 @@ export const protect = async (req, res, next) => {
       })
     }
 
+    // A password reset (or a switched-off account) ends sessions that started before it.
+    if ((decoded.tv || 0) !== (user.tokenVersion || 0)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your session has ended. Please sign in again.',
+      })
+    }
+
     if (user.status !== 'ACTIVE') {
       return res.status(403).json({
         success: false,

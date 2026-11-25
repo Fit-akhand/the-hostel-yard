@@ -14,11 +14,17 @@ export function RentRulesPage() {
   const qc = useQueryClient()
   const query = useQuery({ queryKey: ['finance-settings'], queryFn: financeSettingsApi.get })
   const [rule, setRule] = useState(null)
+  const [noticeDays, setNoticeDays] = useState(30)
 
-  useEffect(() => { if (query.data) setRule({ ...query.data.lateFee, maxAmount: query.data.lateFee.maxAmount ?? '' }) }, [query.data])
+  useEffect(() => {
+    if (!query.data) return
+    setRule({ ...query.data.lateFee, maxAmount: query.data.lateFee.maxAmount ?? '' })
+    setNoticeDays(query.data.noticePeriodDays ?? 30)
+  }, [query.data])
 
   const save = useMutation({
     mutationFn: () => financeSettingsApi.update({
+      noticePeriodDays: Number(noticeDays),
       lateFee: { enabled: rule.enabled, mode: rule.mode, amount: Number(rule.amount), graceDays: Number(rule.graceDays), maxAmount: rule.maxAmount === '' ? null : Number(rule.maxAmount) },
     }),
     onSuccess: () => { toast.success('Rent rules saved.'); qc.invalidateQueries({ queryKey: ['finance-settings'] }) },
@@ -32,7 +38,7 @@ export function RentRulesPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <PageHeader title="Rent rules" description="What happens when rent is paid late." actions={<Button loading={save.isPending} onClick={() => save.mutate()}>Save</Button>} />
+      <PageHeader title="Rent rules" description="Late fees and the move-out notice period." actions={<Button loading={save.isPending} onClick={() => save.mutate()}>Save</Button>} />
       <Card className="grid gap-5 p-6">
         <label className="flex cursor-pointer items-start justify-between gap-4">
           <span>
@@ -55,6 +61,11 @@ export function RentRulesPage() {
           <Field label="Never charge more than (₹, optional)"><Input type="number" min="0" value={rule.maxAmount} onChange={set('maxAmount')} placeholder="No limit" /></Field>
           {example ? <p className="text-xs text-ink-600">{example}</p> : null}
         </div>
+      </Card>
+      <Card className="mt-5 p-6">
+        <Field label="Move-out notice period (days)" hint="Residents see this when they give notice in the app. It is also used in new agreements.">
+          <Input type="number" min="0" max="120" value={noticeDays} onChange={(e) => setNoticeDays(e.target.value)} />
+        </Field>
       </Card>
     </div>
   )

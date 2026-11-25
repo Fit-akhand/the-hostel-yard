@@ -52,6 +52,15 @@ const propertySchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Printed as a QR code at the gate: visitors open it to ask a resident for a guest pass.
+    visitorCode: {
+      type: String,
+      trim: true,
+      maxlength: 20,
+      default: undefined,
+      index: { unique: true, sparse: true },
+    },
+
     status: {
       type: String,
       enum: ['ACTIVE', 'INACTIVE'],

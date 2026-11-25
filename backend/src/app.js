@@ -27,11 +27,20 @@ import financeSettingsRoutes from './routes/financeSettingsRoutes.js'
 import gatewayRoutes from './routes/gatewayRoutes.js'
 import { receiptRouter, depositRouter } from './routes/receiptDepositRoutes.js'
 import { employeeRouter, attendanceRouter, payrollRouter } from './routes/employeeRoutes.js'
+import residentRoutes from './routes/residentRoutes.js'
+import foodMenuRoutes from './routes/foodMenuRoutes.js'
+import listingRoutes from './routes/listingRoutes.js'
+import enquiryRoutes from './routes/enquiryRoutes.js'
+import publicRoutes from './routes/publicRoutes.js'
+import kycRoutes from './routes/kycRoutes.js'
+import { documentRouter, templateRouter } from './routes/documentRoutes.js'
+import guestPassRoutes from './routes/guestPassRoutes.js'
 
 import {
   errorHandler,
   notFoundHandler,
 } from './middlewares/errorMiddleware.js'
+import { securityHeaders, sanitizeBody, sameOriginGuard } from './middlewares/securityMiddleware.js'
 
 const app = express()
 
@@ -69,13 +78,18 @@ app.use(
   })
 )
 
+app.use(securityHeaders)
+app.use(sameOriginGuard(allowedOrigins))
+
 // rawBody is kept so the payment webhook signature can be checked against the exact bytes received.
-app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf } }))
+app.use(express.json({ limit: '200kb', verify: (req, _res, buf) => { req.rawBody = buf } }))
 app.use(
   express.urlencoded({
     extended: true,
+    limit: '200kb',
   })
 )
+app.use(sanitizeBody)
 app.use(cookieParser())
 
 // --------------------------------------------------
@@ -227,6 +241,15 @@ app.use('/api/deposits', depositRouter)
 app.use('/api/employees', employeeRouter)
 app.use('/api/attendance', attendanceRouter)
 app.use('/api/payroll', payrollRouter)
+app.use('/api/me', residentRoutes)
+app.use('/api/food-menu', foodMenuRoutes)
+app.use('/api/listings', listingRoutes)
+app.use('/api/enquiries', enquiryRoutes)
+app.use('/api/public', publicRoutes)
+app.use('/api/tenants', kycRoutes)
+app.use('/api/documents', documentRouter)
+app.use('/api/document-templates', templateRouter)
+app.use('/api/guest-passes', guestPassRoutes)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

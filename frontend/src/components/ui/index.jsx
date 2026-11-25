@@ -270,6 +270,16 @@ export function statusTone(status) {
 
     OCCUPIED: 'navy',
 
+    NOT_STARTED: 'neutral',
+    SUBMITTED: 'info',
+    SENT: 'info',
+    TENANT_SIGNED: 'warning',
+    NEW: 'info',
+    CONTACTED: 'info',
+    VISIT_SCHEDULED: 'warning',
+    CONVERTED: 'success',
+    LOST: 'neutral',
+
     OVERDUE: 'danger',
     REJECTED: 'danger',
     CANCELLED: 'danger',

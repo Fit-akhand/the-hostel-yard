@@ -1,11 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QRCodeSVG } from 'qrcode.react'
-import { announcementApi, allocationApi, complaintApi, gatewayApi, notificationApi, paymentApi, rentApi } from '../../services/apis'
+import { announcementApi, complaintApi, gatewayApi, notificationApi, paymentApi, rentApi, myGuestApi, residentApi, residentDocsApi } from '../../services/apis'
 import { Button, Card, Field, Input, PageHeader, Select, StatCard, StatusBadge, Textarea } from '../../components/ui'
 import { DataTable } from '../../components/tables/DataTable'
 import { toast } from '../../store/toastStore'
 import { formatDate, formatINR, nameOf, toInputDate } from '../../utils/format'
+import { MoveOutCard } from './MoveOutCard'
 import { asArray } from '../../utils/collections'
 import { useAuthStore } from '../../store/authStore'
 import { useEffect, useState } from 'react'
@@ -16,11 +17,34 @@ export function TenantDashboardPage() {
   const dues = useQuery({ queryKey: ['rent-dues'], queryFn: () => rentApi.dues() })
   const announcements = useQuery({ queryKey: ['announcements'], queryFn: () => announcementApi.list() })
   const complaints = useQuery({ queryKey: ['complaints'], queryFn: () => complaintApi.list() })
+  const guests = useQuery({ queryKey: ['my-guests'], queryFn: myGuestApi.list, refetchInterval: 30000 })
+  const waitingGuests = asArray(guests.data?.passes).filter((p) => p.status === 'PENDING')
+  const myDocs = useQuery({ queryKey: ['resident-docs', '/me'], queryFn: residentDocsApi('/me').profile })
+  const toSign = asArray(myDocs.data?.documents).filter((d) => d.status === 'SENT').length
+  const formOpen = ['NOT_STARTED', 'REJECTED'].includes(myDocs.data?.kyc.status)
   const info = summary.data
   const nextDue = asArray(dues.data).find((d) => ['PENDING', 'PARTIAL', 'OVERDUE'].includes(d.status))
   return (
     <div>
       <PageHeader title={`Hello, ${user?.name?.split(' ')[0] || 'resident'}`} description="Your stay, rent and notices in one place." />
+      {toSign || formOpen ? (
+        <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 border-brand p-5">
+          <div>
+            <p className="font-display text-xl">{toSign ? 'Your agreement is ready to sign' : myDocs.data.kyc.status === 'REJECTED' ? 'Your resident form needs a fix' : 'Complete your resident form'}</p>
+            <p className="text-sm text-ink-600">{toSign ? 'Read it and sign it on your phone.' : 'Fill in your details, upload your ID and sign.'}</p>
+          </div>
+          <Link to="/tenant/documents"><Button size="lg">Open documents</Button></Link>
+        </Card>
+      ) : null}
+      {waitingGuests.length ? (
+        <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 border-brand p-5">
+          <div>
+            <p className="font-display text-xl">{waitingGuests.length === 1 ? `${waitingGuests[0].visitorName} wants to visit you` : `${waitingGuests.length} guests are waiting`}</p>
+            <p className="text-sm text-ink-600">Approve or decline so the gate knows.</p>
+          </div>
+          <Link to="/tenant/guests"><Button size="lg">Answer now</Button></Link>
+        </Card>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Outstanding"
@@ -66,23 +90,22 @@ export function TenantDashboardPage() {
 }
 
 export function TenantStayPage() {
-  const allocations = useQuery({
-    queryKey: ['allocations'],
-    queryFn: () => allocationApi.list(),
-  })
-  const active = asArray(allocations.data).find((a) => a.status === 'ACTIVE')
+  // The resident's own record: the general allocation list is for staff only.
+  const tenancy = useQuery({ queryKey: ['my-tenancy'], queryFn: residentApi.tenancy })
+  const active = tenancy.data?.allocation
   return (
     <div>
       <PageHeader title="My stay" />
       {active ? (
         <Card className="p-6">
           <p className="font-display text-3xl">Room {active.room?.roomNumber}</p>
-          <p className="mt-1 text-ink-600">Bed {active.bed?.bedNumber} · {nameOf(active.property)}</p>
+          <p className="mt-1 text-ink-600">Bed {active.bed?.bedNumber} · {nameOf(tenancy.data.tenant.property)}</p>
           <p className="mt-4 text-sm">Since {formatDate(active.startDate)}</p>
         </Card>
       ) : (
-        <Card className="p-10 text-center text-sm text-ink-600">No active allocation was returned for your account.</Card>
+        <Card className="p-10 text-center text-sm text-ink-600">{tenancy.isLoading ? 'Loading…' : tenancy.isError ? tenancy.error.message : 'No bed is allocated to you yet.'}</Card>
       )}
+      <MoveOutCard />
     </div>
   )
 }

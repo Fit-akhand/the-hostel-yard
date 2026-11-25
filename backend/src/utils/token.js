@@ -11,6 +11,8 @@ export const generateAccessToken = (
       userId: user._id.toString(),
       role: user.role,
       organizationId: user.organization?.toString() || null,
+      // Raised when the password is reset or the account is switched off, which ends every older session.
+      tv: user.tokenVersion || 0,
     },
     process.env.JWT_SECRET,
     {

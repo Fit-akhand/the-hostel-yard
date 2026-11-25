@@ -131,7 +131,10 @@ body::before {
 }
 
 h1, h2, h3, h4, h5, h6, .font-display { font-family: var(--font-display); letter-spacing: -0.025em; }
-h1, h2, h3, h4, h5, h6, p { margin-top: 0; }
+/* In the base layer so spacing classes such as mt-4 on headings and paragraphs still apply. */
+@layer base {
+  h1, h2, h3, h4, h5, h6, p { margin-top: 0; }
+}
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
@@ -208,4 +211,18 @@ html.theme-transition, html.theme-transition *, html.theme-transition *::before,
   body, .bg-card, .glass { background: #fff !important; color: #000 !important; box-shadow: none !important; backdrop-filter: none !important; }
   main { padding: 0 !important; }
   div[class*="lg:pl-"] { padding-left: 0 !important; }
+}
+
+@media print {
+  body.printing-area * { visibility: hidden; }
+  body.printing-area .print-area, body.printing-area .print-area * { visibility: visible; }
+  body.printing-area .print-area { position: fixed; top: 24px; left: 0; right: 0; }
+  /* Pop-up chrome is hidden above (header, nav) but the poster sits inside a dialog. */
+  body.printing-area [role="dialog"] * { overflow: visible !important; max-height: none !important; backdrop-filter: none !important; }
+}
+
+@media print {
+  /* Documents print black on white even from the dark theme. */
+  .printable, .printable * { color: #000 !important; border-color: #bbb !important; }
+  .printable { border: 0 !important; padding: 0 !important; }
 }

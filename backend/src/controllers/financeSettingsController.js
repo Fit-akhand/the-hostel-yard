@@ -12,6 +12,7 @@ export const getFinanceSettings = async (req, res, next) => {
 export const updateFinanceSettings = async (req, res, next) => {
   try {
     const set = Object.fromEntries(Object.entries(req.body.lateFee || {}).map(([k, v]) => [`lateFee.${k}`, v]))
+    if (req.body.noticePeriodDays !== undefined) set.noticePeriodDays = req.body.noticePeriodDays
     const settings = await FinanceSettings.findOneAndUpdate(
       { organization: req.user.organization },
       { $set: set, $setOnInsert: { organization: req.user.organization } },

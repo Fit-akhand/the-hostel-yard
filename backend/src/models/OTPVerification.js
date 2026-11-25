@@ -21,6 +21,7 @@ const otpVerificationSchema = new mongoose.Schema(
         'PHONE_VERIFICATION',
         'PASSWORD_RESET',
         'INVITATION',
+        'ESIGN',
       ],
       required: true,
     },

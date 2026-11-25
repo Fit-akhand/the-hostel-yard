@@ -3,6 +3,9 @@ import Property from "../models/Property.js";
 import PropertyManagerAssignment from "../models/PropertyManagerAssignment.js";
 import StaffAssignment from "../models/StaffAssignment.js";
 import { PERMISSIONS } from "../constants/permissions.js";
+import Allocation from "../models/Allocation.js";
+import Bed from "../models/Bed.js";
+import RentPlan from "../models/RentPlan.js";
 
 const UPDATABLE_TENANT_FIELDS = [
   "name",
@@ -19,7 +22,13 @@ const TENANT_UPDATE_PERMISSIONS = [
   PERMISSIONS.UPDATE_TENANTS,
 ];
 
-const checkPropertyAccess = async ({ user, propertyId, permission = null }) => {
+const createError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+export const checkPropertyAccess = async ({ user, propertyId, permission = null }) => {
   if (!user.organization) {
     const error = new Error("User is not associated with an organization.");
 
@@ -448,10 +457,41 @@ export const startTenantNotice = async ({
   tenant.status = "NOTICE_PERIOD";
   tenant.noticeDate = new Date();
   tenant.expectedMoveOutDate = moveOutDate;
+  tenant.noticeGivenBy = "MANAGEMENT";
 
   await tenant.save();
 
   return tenant;
+};
+
+// Takes a resident off notice (they decided to stay). Used by the owner side and by the resident.
+export const withdrawNotice = async (tenant) => {
+  if (tenant.status !== "NOTICE_PERIOD") {
+    const error = new Error("This resident is not on notice.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  tenant.status = "ACTIVE";
+  tenant.noticeDate = null;
+  tenant.expectedMoveOutDate = null;
+  tenant.noticeGivenBy = null;
+  tenant.moveOutReason = null;
+  await tenant.save();
+  return tenant;
+};
+
+export const cancelTenantNotice = async ({ user, tenantId }) => {
+  const tenant = await Tenant.findOne({ _id: tenantId, organization: user.organization });
+
+  if (!tenant) {
+    const error = new Error("Tenant not found.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await checkPropertyAccess({ user, propertyId: tenant.property, permission: TENANT_UPDATE_PERMISSIONS });
+  return withdrawNotice(tenant);
 };
 
 export const moveOutTenant = async ({ user, tenantId, actualMoveOutDate }) => {
@@ -487,15 +527,6 @@ export const moveOutTenant = async ({ user, tenantId, actualMoveOutDate }) => {
     throw error;
   }
 
-  if (tenant.status !== "NOTICE_PERIOD") {
-    const error = new Error(
-      "Tenant must be in notice period before moving out.",
-    );
-
-    error.statusCode = 400;
-    throw error;
-  }
-
   const moveOutDate = new Date(actualMoveOutDate);
 
   if (Number.isNaN(moveOutDate.getTime())) {
@@ -514,8 +545,24 @@ export const moveOutTenant = async ({ user, tenantId, actualMoveOutDate }) => {
 
   tenant.status = "LEFT";
   tenant.actualMoveOutDate = moveOutDate;
+  if (!tenant.noticeDate) tenant.noticeDate = moveOutDate;
+  if (!tenant.noticeGivenBy) tenant.noticeGivenBy = "MANAGEMENT";
 
   await tenant.save();
+
+  // Moving out frees the bed and stops monthly rent, so nothing has to be ended by hand afterwards.
+  const allocations = await Allocation.find({ tenant: tenant._id, status: "ACTIVE" });
+  for (const allocation of allocations) {
+    allocation.status = "ENDED";
+    allocation.endDate = moveOutDate < allocation.startDate ? allocation.startDate : moveOutDate;
+    await allocation.save();
+    await Bed.updateOne({ _id: allocation.bed, status: "OCCUPIED" }, { $set: { status: "AVAILABLE" } });
+  }
+
+  await RentPlan.updateMany(
+    { tenant: tenant._id, status: "ACTIVE" },
+    { $set: { status: "INACTIVE", endDate: moveOutDate } },
+  );
 
   return tenant;
 };

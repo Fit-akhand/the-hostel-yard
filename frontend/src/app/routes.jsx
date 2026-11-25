@@ -72,6 +72,16 @@ import {
   TenantRentPage,
   TenantStayPage,
 } from '../pages/tenant/TenantPages'
+import { GuestApprovePage, PassPage, VisitRequestPage } from '../pages/public/GuestPages'
+import { GatePage } from '../pages/guests/GatePage'
+import { ResidentGuestsPage } from '../pages/guests/ResidentGuestsPage'
+import { FoodMenuPage } from '../pages/food/FoodMenuPage'
+import { ResidentFoodPage } from '../pages/food/ResidentFoodPage'
+import { EnquiryPage } from '../pages/leads/EnquiryPage'
+import { ListingPage } from '../pages/leads/ListingPage'
+import { StayDetailPage, StaysPage } from '../pages/public/StaysPages'
+import { LinkDocumentPage, LinkDocumentsPage, MyDocumentPage, MyDocumentsPage } from '../pages/kyc/ResidentDocs'
+import { DocumentDetailPage, DocumentListPage, TemplatePage } from '../pages/kyc/DocumentPages'
 import { PERMISSIONS, ROLES } from '../config/permissions'
 import { Button, Card } from '../components/ui'
 import { Link } from 'react-router-dom'
@@ -126,6 +136,15 @@ export function AppRoutes() {
         <Route path="/staff/activate/:token" element={<ActivateStaffPage />} />
       </Route>
 
+      {/* Opened from a link or QR code, without signing in */}
+      <Route path="/visit/:code" element={<VisitRequestPage />} />
+      <Route path="/pass/:token" element={<PassPage />} />
+      <Route path="/guest/:token" element={<GuestApprovePage />} />
+      <Route path="/r/:token" element={<LinkDocumentsPage />} />
+      <Route path="/r/:token/doc/:docId" element={<LinkDocumentPage />} />
+      <Route path="/stays/:orgSlug" element={<StaysPage />} />
+      <Route path="/stays/:orgSlug/:slug" element={<StayDetailPage />} />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<StaffAppGate />}>
           <Route element={<DashboardLayout />}>
@@ -137,6 +156,8 @@ export function AppRoutes() {
               <Route path="/employees/new" element={<EmployeeFormPage mode="create" />} />
               <Route path="/employees/:id/edit" element={<EmployeeFormPage mode="edit" />} />
               <Route path="/rent-rules" element={<RentRulesPage />} />
+              <Route path="/document-templates" element={<TemplatePage />} />
+              <Route path="/public-page" element={<ListingPage />} />
               <Route path="/deposits" element={<DepositListPage />} />
               <Route path="/payroll" element={<PayrollPage />} />
               <Route path="/payroll/:id" element={<PayslipPage />} />
@@ -180,6 +201,16 @@ export function AppRoutes() {
               <Route path="/tenants/:tenantId/settlement" element={<SettlementPage />} />
             </Route>
 
+            <Route element={<RoleRoute permission={PERMISSIONS.VIEW_TENANTS} />}>
+              <Route path="/visitors" element={<GatePage />} />
+              <Route path="/documents" element={<DocumentListPage />} />
+              <Route path="/documents/:id" element={<DocumentDetailPage />} />
+            </Route>
+
+            <Route element={<RoleRoute permission={PERMISSIONS.MANAGE_FOOD_MENU} />}>
+              <Route path="/food-menu" element={<FoodMenuPage />} />
+            </Route>
+
             <Route element={<RoleRoute permission={PERMISSIONS.VIEW_ALLOCATIONS} />}>
               <Route path="/allocations" element={<AllocationListPage />} />
               <Route path="/allocations/new" element={<AllocationCreatePage />} />
@@ -187,6 +218,7 @@ export function AppRoutes() {
             </Route>
 
             <Route element={<RoleRoute permission={PERMISSIONS.VIEW_BOOKINGS} />}>
+              <Route path="/enquiries" element={<EnquiryPage />} />
               <Route path="/bookings" element={<BookingListPage />} />
               <Route path="/bookings/new" element={<BookingFormPage />} />
               <Route path="/bookings/:bookingId" element={<BookingDetailPage />} />
@@ -242,6 +274,10 @@ export function AppRoutes() {
             <Route path="/tenant" element={<TenantDashboardPage />} />
             <Route path="/tenant/stay" element={<TenantStayPage />} />
             <Route path="/tenant/rent" element={<TenantRentPage />} />
+            <Route path="/tenant/guests" element={<ResidentGuestsPage />} />
+            <Route path="/tenant/food" element={<ResidentFoodPage />} />
+            <Route path="/tenant/documents" element={<MyDocumentsPage />} />
+            <Route path="/tenant/documents/:docId" element={<MyDocumentPage />} />
             <Route path="/tenant/payments" element={<TenantPaymentsPage />} />
             <Route path="/tenant/receipts/:paymentId" element={<ReceiptPage />} />
             <Route path="/tenant/complaints" element={<TenantComplaintsPage />} />

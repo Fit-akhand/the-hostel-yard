@@ -12,7 +12,8 @@ const updateSchema = z.object({
     amount: z.number().min(0).max(100000).optional(),
     graceDays: z.number().int().min(0).max(30).optional(),
     maxAmount: z.number().min(0).max(1000000).nullable().optional(),
-  }).strict(),
+  }).strict().optional(),
+  noticePeriodDays: z.number().int().min(0).max(120).optional(),
 }).strict()
 
 const router = express.Router()

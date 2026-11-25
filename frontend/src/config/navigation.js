@@ -15,6 +15,7 @@ export const NAV_GROUPS = [
       { to: '/properties', label: 'Properties', roles: [ROLES.BUSINESS_OWNER, ROLES.LANDLORD, ROLES.PROPERTY_MANAGER] },
       { to: '/rooms', label: 'Rooms', permission: PERMISSIONS.VIEW_ROOMS },
       { to: '/beds', label: 'Beds', permission: PERMISSIONS.VIEW_ROOMS },
+      { to: '/public-page', label: 'Public page', roles: [ROLES.BUSINESS_OWNER] },
     ],
   },
   {
@@ -22,6 +23,7 @@ export const NAV_GROUPS = [
     label: 'People',
     items: [
       { to: '/tenants', label: 'Tenants', permission: PERMISSIONS.VIEW_TENANTS },
+      { to: '/documents', label: 'Documents', permission: PERMISSIONS.VIEW_TENANTS },
       { to: '/managers', label: 'Managers', roles: [ROLES.BUSINESS_OWNER] },
       { to: '/staff', label: 'Staff', permission: PERMISSIONS.VIEW_STAFF },
       { to: '/employees', label: 'Employees', permission: PERMISSIONS.VIEW_STAFF },
@@ -32,8 +34,11 @@ export const NAV_GROUPS = [
     label: 'Operations',
     items: [
       { to: '/allocations', label: 'Allocations', permission: PERMISSIONS.VIEW_ALLOCATIONS },
+      { to: '/visitors', label: 'Guest passes', permission: PERMISSIONS.VIEW_TENANTS },
       { to: '/attendance', label: 'Attendance', permission: PERMISSIONS.VIEW_STAFF },
       { to: '/bookings', label: 'Bookings', permission: PERMISSIONS.VIEW_BOOKINGS },
+      { to: '/enquiries', label: 'Enquiries', permission: PERMISSIONS.VIEW_BOOKINGS },
+      { to: '/food-menu', label: 'Food menu', permission: PERMISSIONS.MANAGE_FOOD_MENU },
       { to: '/complaints', label: 'Complaints', permission: PERMISSIONS.VIEW_COMPLAINTS },
       { to: '/announcements', label: 'Announcements', permission: PERMISSIONS.SEND_ANNOUNCEMENT, alsoRoles: [ROLES.BUSINESS_OWNER, ROLES.LANDLORD] },
     ],
@@ -81,6 +86,9 @@ export const TENANT_NAV = [
   { to: '/tenant', label: 'Dashboard' },
   { to: '/tenant/stay', label: 'My stay' },
   { to: '/tenant/rent', label: 'Rent' },
+  { to: '/tenant/guests', label: 'Guests' },
+  { to: '/tenant/food', label: 'Food menu' },
+  { to: '/tenant/documents', label: 'Documents' },
   { to: '/tenant/payments', label: 'Payments' },
   { to: '/tenant/complaints', label: 'Complaints' },
   { to: '/tenant/announcements', label: 'Announcements' },

@@ -6,6 +6,7 @@ import SetupVerification from '../models/SetupVerification.js'
 import { generateAccessToken } from '../utils/token.js'
 
 import { createOtp, verifyOtp } from './otpService.js'
+import { sendPasswordResetMessage } from '../messaging/messenger.js'
 
 import crypto from 'crypto'
 import PasswordResetToken from '../models/PasswordResetToken.js'
@@ -29,8 +30,8 @@ export const forgotPassword = async ({
   })
 
   // Security:
-  // Never reveal whether an account exists.
-  if (!user) {
+  // Never reveal whether an account exists. Shared demo accounts cannot be reset.
+  if (!user || user.isDemo) {
     return
   }
 
@@ -74,20 +75,14 @@ export const forgotPassword = async ({
   const resetUrl =
     `${frontendUrl}/reset-password?token=${rawToken}`
 
-  // TODO:
-  // Send resetUrl using your email service.
-  //
-  // await sendPasswordResetEmail({
-  //   email: user.email,
-  //   name: user.name,
-  //   resetUrl,
-  // })
-
-  // DO NOT return resetUrl in production.
-  return {
-  resetUrl,
-  expiresAt,
-}
+  // The link goes to the account's email only. It is never returned in the API response: anyone can ask
+  // for a reset, so returning it would let a stranger take over the account.
+  await sendPasswordResetMessage({
+    email: user.email,
+    name: user.name,
+    resetUrl,
+    expiresInMinutes: 15,
+  })
 }
 
 export const resetPassword = async ({

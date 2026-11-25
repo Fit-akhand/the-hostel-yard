@@ -22,14 +22,17 @@ import {
   ClipboardList,
   CreditCard,
   FileText,
+  Globe,
   LayoutDashboard,
   LogOut,
   Megaphone,
   Menu,
   MessageSquareWarning,
+  PhoneCall,
   Receipt,
   Search,
   Settings2,
+  UserCheck,
   UserCog,
   UserRound,
   Users,
@@ -158,6 +161,10 @@ function NavIcon({ item }) {
   }
 
   if (label.includes('dashboard')) return <LayoutDashboard {...props} />
+  if (label.includes('guest')) return <UserCheck {...props} />
+  if (label.includes('public')) return <Globe {...props} />
+  if (label.includes('enquir')) return <PhoneCall {...props} />
+  if (label.includes('food')) return <UtensilsCrossed {...props} />
 
   if (
     label === 'properties' ||

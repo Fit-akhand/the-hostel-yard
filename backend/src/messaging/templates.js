@@ -17,6 +17,13 @@ export const TYPE_GROUP = {
   DAILY_DIGEST: 'digest',
   INVITE: 'always',
   TEST: 'always',
+  MOVE_OUT_NOTICE: 'always',
+  ENQUIRY_NEW: 'always',
+  KYC_REVIEWED: 'always',
+  DOCUMENT_TO_SIGN: 'always',
+  RESIDENT_FORM_LINK: 'always',
+  GUEST_REQUEST: 'always',
+  GUEST_APPROVED: 'always',
 }
 
 // Each template returns { title, body } from plain variables, so it is easy to test and to translate later.
@@ -62,6 +69,36 @@ export const TEMPLATES = {
   INVITE: (v) => ({
     title: 'You are invited to The Hostel Yard',
     body: `Hi ${v.name}, ${v.inviter ? `${v.inviter} has invited you` : 'you have been invited'} to join ${v.property ? `${v.property} on ` : ''}The Hostel Yard as ${v.role}. Open this link to set up your account: ${v.link}${sign}`,
+  }),
+  MOVE_OUT_NOTICE: (v) => ({
+    title: 'Move-out notice',
+    body: `${v.name} (${v.property}${v.room ? `, room ${v.room}` : ''}) has given notice to move out on ${date(v.moveOutDate)}.${v.reason ? ` Reason: ${v.reason}.` : ''}${v.shortBy > 0 ? ` That is ${v.shortBy} day${v.shortBy === 1 ? '' : 's'} shorter than the notice period.` : ''}${sign}`,
+  }),
+  ENQUIRY_NEW: (v) => ({
+    title: 'New enquiry',
+    body: `New enquiry for ${v.property}: ${v.name}, ${v.phone}${v.sharing ? `, wants ${String(v.sharing).toLowerCase()} sharing` : ''}${v.moveInDate ? `, from ${date(v.moveInDate)}` : ''}.${v.message ? ` "${v.message}"` : ''} Reply quickly to book the visit.${sign}`,
+  }),
+  KYC_REVIEWED: (v) => ({
+    title: v.approved ? 'Documents verified' : 'Documents need a fix',
+    body: v.approved
+      ? `Hi ${v.name}, your resident form and ID documents for ${v.property} are verified. Thank you!${sign}`
+      : `Hi ${v.name}, your resident form for ${v.property} needs a correction${v.reason ? `: ${v.reason}` : ''}. Please open your link and update it${v.link ? `: ${v.link}` : ''}.${sign}`,
+  }),
+  DOCUMENT_TO_SIGN: (v) => ({
+    title: 'Document to sign',
+    body: `Hi ${v.name}, please read and e-sign your ${v.document} for ${v.property}: ${v.link}${sign}`,
+  }),
+  RESIDENT_FORM_LINK: (v) => ({
+    title: 'Complete your resident form',
+    body: `Hi ${v.name}, welcome to ${v.property}! Please fill in your resident form and upload your ID here: ${v.link}${sign}`,
+  }),
+  GUEST_REQUEST: (v) => ({
+    title: 'Guest waiting for your approval',
+    body: `Hi ${v.name}, ${v.visitor}${v.relation ? ` (${v.relation})` : ''}, ${v.visitorPhone}, wants to visit you at ${v.property} on ${date(v.date)}${v.time ? ` at ${v.time}` : ''}. Approve or decline here: ${v.link}\nIf you do not know this person, decline.${sign}`,
+  }),
+  GUEST_APPROVED: (v) => ({
+    title: 'Your guest pass',
+    body: `Hi ${v.name}, ${v.resident} approved your visit to ${v.property} on ${date(v.date)}. Show code ${v.code} at the gate: ${v.link}${sign}`,
   }),
   TEST: (v) => ({
     title: 'Test message',

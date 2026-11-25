@@ -21,6 +21,16 @@ const organizationSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Address of the public vacancy page, e.g. /pg/the-hostel-yard. Set the first time a property is listed.
+    publicSlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: 60,
+      default: undefined,
+      index: { unique: true, sparse: true },
+    },
+
     email: {
       type: String,
       trim: true,
